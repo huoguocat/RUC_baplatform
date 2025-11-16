@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>提交列表</title>
+    </head> 
+    <body>
+        {% csrf_token %}
+        <h1>提交列表<h1>
+        <table class="table">
+            <thead calss="thead-dark">
+                <tr>
+                    <td scope="col">提交学生</td>
+                    <td scope="col">获得分数</td>
+                    <td scope="col">最大分数</td>
+                    <td scope="col">操作</td>
+                </tr>
+        </table>
+       
+        <tbody>
+            {% for submit in submit_list %}
+                <tr>
+                    <td>{{ submit.student.name }}</td>
+                    <td>{{ submit.marks }}</td>
+                    <td>{{ submit.max_marks }}</td>
+                    <td>
+                        <a href="/assignment/{{submit.assignment.id}}/student/{{submit.student.user.id}}/file/list">文档</a>
+                        <a href="/assignment/{{submit.assignment.id}}/student/{{submit.student.user.id}}/entermarks">输入分数</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </body>
+</hmtl>

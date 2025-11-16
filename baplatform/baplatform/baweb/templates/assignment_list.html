@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>任务列表</title>
+    </head> 
+    <body>
+        {% csrf_token %}
+        <h1>任务列表<h1>
+        {% if is_teacher %}
+            <a href="/course/{{id}}/assignment/add">添加任务
+        {% endif %}
+        <table class="table">
+            <thead calss="thead-dark">
+                <tr>
+                    <th scope="col">任务编号</th>
+                    <th scope="col">任务名</th>
+                    <th scope="col">截止时间</th>
+                    <th scope="col">操作</th>
+                </tr>
+        </table>
+       
+        <tbody>
+            {% for assignment in assignment_list %}
+                <tr>
+                    <th scope="row">{{ assignment.id }}</td>
+                    <td>{{ assignment.name }}</td>
+                    <td>{{ assignment.ddl }}</td>
+                    <td>
+                        {% if is_teacher %}
+                            <a href="/course/{{id}}/assignment/{{assignment.id}}/update">编辑任务
+                            <a href="/course/{{id}}/assignment/{{assignment.id}}/delete">删除任务
+                        {% endif %}   
+                        <a href="/assignment/{{assignment.id}}/page">任务详情</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </body>
+</hmtl>

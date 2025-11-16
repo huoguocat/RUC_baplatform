@@ -1,0 +1,729 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>任务详情</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-datepicker-1.9.0/css/bootstrap-datepicker.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        .course-nav-heading {
+            float: left;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+
+        .left {
+            float: left;
+        }
+
+        .right {
+            float: right;
+        }
+
+        .course-nav-link {
+            margin-top: 6px;
+        }
+
+        .assignment_height {
+            height: 50px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+                <div class="marginleft clearfix">
+                    <button type="button" class="navbar-toggle" style="float: right;" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <span class="course-nav-heading">
+                        <a href="/course/{{course.id}}/course_page">
+                            <h3>
+                                {{course.name}}
+                            </h3>
+                        </a>
+                    </span>
+                </div>
+
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="marginleft" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav ">
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/course_page">课程简介 <span
+                                class="sr-only">(current)</span></a></li>
+                    <li class="active course-nav-link"><a href="/course/{{course.id}}/assignment/list">作业</a></li>
+                    {% if is_teacher %}
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/student/list">学生</a></li>
+                    {% endif%}
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/file/list">课件</a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/group/list">小组</a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/comment/list">讨论</a></li>
+                </ul>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                            aria-expanded="true">{{ username }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/account/">
+                                    个人信息
+                                </a>
+                            </li>
+                            <li><a data-toggle="modal" data-target="#change_password_modal">修改密码</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+    </nav>
+
+    <!-- Modal -->
+    <div class="modal fade" id="change_password_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">修改密码</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="password_change_form" enctype="multipart/form-data">
+                        <div class="clearfix">
+                            {% for field in changepwd_form%}
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label>
+                                        {{field.label}}
+                                    </label>
+                                    {{ field }}
+                                    <span class="error-msg" style="color: red;"></span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" id="ChangePassword" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="navbar-left">
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation">
+                <a href="/home/">
+                    <i class="fa fa-home" aria-hidden="true"></i>
+                    首页
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/account/">
+                    <i class="fa fa-address-card" aria-hidden="true"></i>
+                    账号
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/announce/">
+                    <i class="fa fa-envelope-open-o" aria-hidden="true"></i>
+                    通知
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/course/">
+                    <i class="fa fa-book" aria-hidden="true"></i>
+                    课程
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/calendar/">
+                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                    日历
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/help/">
+                    <i class="fa fa-question-circle-o" aria-hidden="true"></i>
+                    帮助
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="contianer marginleft">
+        <div class="col-xs-12 col-md-12">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{{ assignment.name }}</h3>
+                </div>
+                {% if is_teacher %}
+                <div class="panel-body tex" id="editor">
+                    {{ assignment.description_richtext|safe }}
+                </div>
+                <div class="panel-footer" style="height: 50px;">
+                    <!-- Indicates a successful or positive action -->
+                    <button id="savebtn" type="button" class="btn btn-success right">保存</button>
+                </div>
+                {% else %}
+                <div class="panel-body tex">
+                    {{ assignment.description_richtext|safe }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-12">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">任务文档</h3>
+                </div>
+                <div class="panel-body tex clearfix">
+                    {% if is_teacher%}
+                    <form id="assignmentinputform" enctype="multipart/form-data">
+                        {% for field in assignmentfileform%}
+                        <div class="col-xs-6 col-md-6">
+                            <div class="form-group">
+                                <label>
+                                    {{field.label}}
+                                </label>
+                                {{ field }}
+                                <span class="error-msg" style="color: red;"></span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </form>
+                    <span><a id="uploadAF" class="btn btn-primary right" role="button"
+                            onclick="UploadAssignmentFile();">提交</a>
+                    </span>
+                    <span><a id="addinput" class="btn btn-default right" role="button" onclick="AddInput();">添加</a>
+                    </span>
+                    {% endif %}
+                    <ul class="nav nav-list">
+                        <li class="divider"></li>
+                    </ul>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>文档名</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in file_list %}
+                            <tr>
+                                <td>{{ file.file_name }}</td>
+                                <td>
+                                    <span><a href="{{file.file.url}}" class="btn btn-primary"
+                                            role="button">下载</a></span>
+                                    {% if is_teacher %}
+                                    <span><a href="/assignment/{{assignment.id}}/file/{{file.id}}/delete"
+                                            class="btn btn-danger" role="button">删除</a></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-12">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">任务提交</h3>
+                </div>
+                <div class="panel-body tex">
+                    {% if is_teacher %}
+                    <div class="col-xs-6 col-md-6">
+                        <div id="submitchat" style="width: 600px;height:400px;"></div>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>编号</th>
+                                <th>提交学生</th>
+                                <th>学号</th>
+                                <th>分数</th>
+                                <th>文档</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td id="UserID">{{ student.user.id }}</td>
+                                <td>{{ student.name }}</td>
+                                <td>{{ student.user.username }}</td>
+                                <td id="GetMarks"></td>
+                                <td id="SubmitFiles"></td>
+                                <td>
+                                    <span>
+                                        <a class="btn btn-success" role="button"
+                                            href="/assignment/{{assignment.id}}/student/{{student.user.id}}/entermarks">打分</a>
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <form id="assignmentsubmitform" enctype="multipart/form-data">
+                        {% for field in assignmentsubmitform %}
+                        <div class="col-xs-6 col-md-6">
+                            <div class="form-group">
+                                <label>
+                                    {{field.label}}
+                                </label>
+                                {{ field }}
+                                <span class="error-msg" style="color: red;"></span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </form>
+                    <span><a id="submitAF" class="btn btn-primary right" role="button"
+                            onclick="SubmitAssignmentFile();">提交</a>
+                    </span>
+                    <span><a id="addinput" class="btn btn-default right" role="button" onclick="AddSubmit();">添加</a>
+                    </span>
+                    <ul class="nav nav-list">
+                        <li class="divider"></li>
+                    </ul>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>提交文件</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submit in submit_list %}
+                            <tr>
+                                <td>{{ submit.file_name}}</td>
+                                <td>
+                                    <span><a href="{{submit.file.url}}" class="btn btn-primary"
+                                            role="button">下载</a></span>
+                                    <span><a href="/assignment/{{assignment.id}}/file/{{submit.id}}/delete"
+                                            class="btn btn-danger" role="button">删除</a></span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-datepicker-1.9.0/js/bootstrap-datepicker.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-datepicker-1.9.0/locales/bootstrap-datepicker.zh-CN.min.js' %}"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/35.4.0/super-build/ckeditor.js"></script>
+<script src="{% static 'js/echarts.js' %}"></script>
+<script>
+    // This sample still does not showcase all CKEditor 5 features (!)
+    let theEditor;
+    // Visit https://ckeditor.com/docs/ckeditor5/latest/features/index.html to browse all the features.
+    CKEDITOR.ClassicEditor.create(document.getElementById("editor"), {
+        // https://ckeditor.com/docs/ckeditor5/latest/features/toolbar/toolbar.html#extended-toolbar-configuration-format
+        toolbar: {
+            items: [
+                'exportPDF', 'exportWord', '|',
+                'findAndReplace', 'selectAll', '|',
+                'heading', '|',
+                'bold', 'italic', 'strikethrough', 'underline', 'code', 'subscript', 'superscript', 'removeFormat', '|',
+                'bulletedList', 'numberedList', 'todoList', '|',
+                'outdent', 'indent', '|',
+                'undo', 'redo',
+                '-',
+                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
+                'alignment', '|',
+                'link', 'insertImage', 'blockQuote', 'insertTable', 'mediaEmbed', 'codeBlock', 'htmlEmbed', '|',
+                'specialCharacters', 'horizontalLine', 'pageBreak', '|',
+                'textPartLanguage', '|',
+                'sourceEditing'
+            ],
+            shouldNotGroupWhenFull: true
+        },
+        // Changing the language of the interface requires loading the language file using the <script> tag.
+        // language: 'es',
+        list: {
+            properties: {
+                styles: true,
+                startIndex: true,
+                reversed: true
+            }
+        },
+        // https://ckeditor.com/docs/ckeditor5/latest/features/headings.html#configuration
+        heading: {
+            options: [
+                { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
+                { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
+            ]
+        },
+        // https://ckeditor.com/docs/ckeditor5/latest/features/editor-placeholder.html#using-the-editor-configuration
+        placeholder: 'Welcome to CKEditor 5!',
+        // https://ckeditor.com/docs/ckeditor5/latest/features/font.html#configuring-the-font-family-feature
+        fontFamily: {
+            options: [
+                'default',
+                'Arial, Helvetica, sans-serif',
+                'Courier New, Courier, monospace',
+                'Georgia, serif',
+                'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                'Tahoma, Geneva, sans-serif',
+                'Times New Roman, Times, serif',
+                'Trebuchet MS, Helvetica, sans-serif',
+                'Verdana, Geneva, sans-serif'
+            ],
+            supportAllValues: true
+        },
+        // https://ckeditor.com/docs/ckeditor5/latest/features/font.html#configuring-the-font-size-feature
+        fontSize: {
+            options: [10, 12, 14, 'default', 18, 20, 22],
+            supportAllValues: true
+        },
+        // Be careful with the setting below. It instructs CKEditor to accept ALL HTML markup.
+        // https://ckeditor.com/docs/ckeditor5/latest/features/general-html-support.html#enabling-all-html-features
+        htmlSupport: {
+            allow: [
+                {
+                    name: /.*/,
+                    attributes: true,
+                    classes: true,
+                    styles: true
+                }
+            ]
+        },
+        // Be careful with enabling previews
+        // https://ckeditor.com/docs/ckeditor5/latest/features/html-embed.html#content-previews
+        htmlEmbed: {
+            showPreviews: true
+        },
+        // https://ckeditor.com/docs/ckeditor5/latest/features/link.html#custom-link-attributes-decorators
+        link: {
+            decorators: {
+                addTargetToExternalLinks: true,
+                defaultProtocol: 'https://',
+                toggleDownloadable: {
+                    mode: 'manual',
+                    label: 'Downloadable',
+                    attributes: {
+                        download: 'file'
+                    }
+                }
+            }
+        },
+        // https://ckeditor.com/docs/ckeditor5/latest/features/mentions.html#configuration
+        mention: {
+            feeds: [
+                {
+                    marker: '@',
+                    feed: [
+                        '@apple', '@bears', '@brownie', '@cake', '@cake', '@candy', '@canes', '@chocolate', '@cookie', '@cotton', '@cream',
+                        '@cupcake', '@danish', '@donut', '@dragée', '@fruitcake', '@gingerbread', '@gummi', '@ice', '@jelly-o',
+                        '@liquorice', '@macaroon', '@marzipan', '@oat', '@pie', '@plum', '@pudding', '@sesame', '@snaps', '@soufflé',
+                        '@sugar', '@sweet', '@topping', '@wafer'
+                    ],
+                    minimumCharacters: 1
+                }
+            ]
+        },
+        // The "super-build" contains more premium features that require additional configuration, disable them below.
+        // Do not turn them on unless you read the documentation and know how to configure them and setup the editor.
+        removePlugins: [
+            // These two are commercial, but you can try them out without registering to a trial.
+            // 'ExportPdf',
+            // 'ExportWord',
+            'CKBox',
+            'CKFinder',
+            'EasyImage',
+            // This sample uses the Base64UploadAdapter to handle image uploads as it requires no configuration.
+            // https://ckeditor.com/docs/ckeditor5/latest/features/images/image-upload/base64-upload-adapter.html
+            // Storing images as Base64 is usually a very bad idea.
+            // Replace it on production website with other solutions:
+            // https://ckeditor.com/docs/ckeditor5/latest/features/images/image-upload/image-upload.html
+            // 'Base64UploadAdapter',
+            'RealTimeCollaborativeComments',
+            'RealTimeCollaborativeTrackChanges',
+            'RealTimeCollaborativeRevisionHistory',
+            'PresenceList',
+            'Comments',
+            'TrackChanges',
+            'TrackChangesData',
+            'RevisionHistory',
+            'Pagination',
+            'WProofreader',
+            // Careful, with the Mathtype plugin CKEditor will not load when loading this sample
+            // from a local file system (file://) - load this site via HTTP server if you enable MathType
+            'MathType'
+        ]
+    })
+        .then(editor => {
+            theEditor = editor;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    ;
+</script>
+<script type="text/javascript">
+    $(function () {
+        ChangePasswordEvent();
+        SubmitChatEvent();
+        GetMarkEvent();
+        GetSubmitFilesEvent();
+        MarksEnterEvent();
+        Save();
+        AutoAddFileName();
+    })
+    $(document).ready(function () {
+        $("#id_file").change(function () {
+            var str = $(this).val();
+            var fileName = getFileName(str);
+            function getFileName(o) {
+                var pos = o.lastIndexOf("\\");
+                return o.substring(pos + 1);
+            }
+            $(this).parent().parent().next().children().children("#id_file_name").val(fileName);
+        });
+    })
+    function ChangePasswordEvent() {
+        $("#ChangePassword").click(function () {
+            //清除错误信息
+            $(".error-msg").empty();
+            $.ajax({
+                url: "/password/change",
+                type: "post",
+                data: $("#password_change_form").serialize(),
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        alert("密码修改成功");
+                        //清空表单
+                        $("#password_change_form")[0].reset();
+                        //关闭对话框
+                        $("#change_password_modal").modal('hide');
+
+                    } else {
+                        $.each(res.error, function (name, errorlist) {
+                            $("#id_" + name).next().text(errorlist[0]);
+                        })
+                    }
+                }
+
+            })
+        });
+    }
+    function AddInput() {
+        var inputform = "<div class=\"col-xs-6 col-md-6\"><div class=\"form-group\"><label>任务文档</label><input type=\"file\" name=\"file\" class=\"form-control\" placeholder=\"任务文档\" required=\"\" id=\"id_file\" onchange=\"AutoAddFileName(this, this.value);\"><span class=\"error-msg\" style=\"color: red;\"></span></div></div><div class=\"col-xs-6 col-md-6\"><div class=\"form-group\"> <label>文档名</label><input type=\"text\" name=\"file_name\" maxlength=\"64\" class=\"form-control\" placeholder=\"文档名\" id=\"id_file_name\"><span class=\"error-msg\" style=\"color: red;\"></span></div></div>";
+        $("#assignmentinputform").append(inputform);
+    }
+    function AddSubmit() {
+        var inputform = "<div class=\"col-xs-6 col-md-6\"><div class=\"form-group\"><label>任务文档</label><input type=\"file\" name=\"file\" class=\"form-control\" placeholder=\"任务文档\" required=\"\" id=\"id_file\" onchange=\"AutoAddFileName(this, this.value);\"><span class=\"error-msg\" style=\"color: red;\"></span></div></div><div class=\"col-xs-6 col-md-6\"><div class=\"form-group\"> <label>文档名</label><input type=\"text\" name=\"file_name\" maxlength=\"64\" class=\"form-control\" placeholder=\"文档名\" id=\"id_file_name\"><span class=\"error-msg\" style=\"color: red;\"></span></div></div>";
+        $("#assignmentsubmitform").append(inputform);
+    }
+    function UploadAssignmentFile() {
+        $(".error-msg").empty();
+        var data = new FormData($("#assignmentinputform")[0]);
+        $.ajax({
+            url: "/assignment/{{assignment.id}}/file/add",
+            type: "post",
+            data: data,
+            dataType: "JSON",
+            crossDomain: true,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                if (res.status) {
+                    alert("添加成功");
+                    $("#assignmentinputform")[0].reset();
+                    location.reload('true');
+                } else {
+                    $.each(res.error, function (name, errorlist) {
+                        $("#id_" + name).next().text(errorlist[0]);
+                    });
+                }
+            }
+        });
+    }
+    function SubmitAssignmentFile() {
+        $(".error-msg").empty();
+        var data = new FormData($("#assignmentsubmitform")[0]);
+        $.ajax({
+            url: "/assignment/{{assignment.id}}/file/add",
+            type: "post",
+            data: data,
+            dataType: "JSON",
+            crossDomain: true,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                if (res.status) {
+                    alert("添加成功");
+                    $("#assignmentsubmitform")[0].reset();
+                    location.reload("true");
+                } else {
+                    $.each(res.error, function (name, errorlist) {
+                        $("#id_" + name).next().text(errorlist[0]);
+                    });
+                }
+            }
+        });
+    }
+    function SubmitChatEvent() {
+        var myChart = echarts.init(document.getElementById('submitchat'));
+        option = {
+            title: {
+                text: '作业提交情况',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'item'
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left'
+            },
+            series: []
+        };
+        $.ajax({
+            url: "/assignment/{{assignment.id}}/submit/info",
+            type: "get",
+            dataType: "JSON",
+            success: function (res) {
+                if (res.status) {
+                    // 使用刚指定的配置项和数据显示图表。
+                    option.series = res.series;
+                    myChart.setOption(option);
+                } else {
+
+                }
+            }
+        });
+    }
+    function GetMarkEvent() {
+        let UserID_list = document.querySelectorAll("#UserID");
+        let Marks_list = document.querySelectorAll("#GetMarks");
+        for (let i = 0; i < UserID_list.length; i++) {
+            var student_id = UserID_list[i].innerHTML;
+            $.ajax({
+                url: "/assignment/{{assignment.id}}/student/" + student_id + "/marks/get",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        Marks_list[i].innerText = res.marks;
+                    } else {
+                        Marks_list[i].innerText = "0/100";
+                    }
+                }
+            })
+        }
+    }
+    function GetSubmitFilesEvent() {
+        const UserID_list = document.querySelectorAll("#UserID");
+        const Files_list = document.querySelectorAll("#SubmitFiles");
+        for (let i = 0; i < UserID_list.length; i++) {
+            var student_id = UserID_list[i].innerHTML;
+            $.ajax({
+                url: "/assignment/{{assignment.id}}/student/" + student_id + "/files/get",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        for (var j = 0; j < res.count; j++) {
+                            const p = document.createElement('p');
+                            const a = document.createElement('a');
+                            a.innerText = res.names[j];
+                            a.href = res.urls[j];
+                            p.appendChild(a);
+                            Files_list[i].append(p);
+                        }
+                    } else {
+                        alert("出现错误");
+                    }
+                }
+            });
+        }
+    }
+    function MarksEnterEvent() {
+        $("#MarksEnter").click(function () {
+            alert("{{student.user.id}}");
+            $.ajax({
+                url: "/assignment/{{assignment.id}}/student/" + student_id + "/entermarks",
+                type: "post",
+                dataType: "JSON",
+                data: $("#MarksForm").serialize(),
+                success: function (res) {
+                    if (res.status) {
+                        alert("打分成功");
+                        $("#MarksForm")[0].reset();
+                        //关闭对话框
+                        $("#MarksEnterModal").modal('hide');
+                        location.reload("true");
+                    } else {
+                        $.each(res.error, function (name, errorlist) {
+                            $("#id_" + name).next().text(errorlist[0]);
+                        })
+                    }
+                }
+            });
+        })
+    }
+    function AutoAddFileName(loc, str) {
+        var fileName = getFileName(str);
+        function getFileName(o) {
+            var pos = o.lastIndexOf("\\");
+            return o.substring(pos + 1);
+        }
+        $(loc).parent().parent().next().children().children("#id_file_name").val(fileName);
+    }
+    function Save() {
+        $("#savebtn").click(function () {
+            var content = theEditor.getData();
+            let editData = {};
+            editData['description_richtext'] = content;
+            $.ajax({
+                type: "post",
+                url: "/assignment/{{assignment.id}}/description_richtext/update",
+                dataType: "JSON",
+                data: editData,
+                success: function (res) {
+                    if (res.status) {
+                        alert("简介更新成功");
+                    } else {
+                        alert("更新失败");
+                    }
+                }
+            })
+
+        });
+    }
+</script>
+</hmtl>

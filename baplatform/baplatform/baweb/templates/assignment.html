@@ -1,0 +1,341 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>课程详情</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-datepicker-1.9.0/css/bootstrap-datepicker.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        .course-nav-heading {
+            float: left;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+
+        .course-nav-link {
+            margin-top: 6px;
+        }
+
+        .assignment_height {
+            height: 50px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+                <div class="marginleft clearfix">
+                    <button type="button" class="navbar-toggle" style="float: right;" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <span class="course-nav-heading">
+                        <a href="/course/{{course.id}}/course_page">
+                            <h3>
+                                {{course.name}}
+                            </h3>
+                        </a>
+                    </span>
+                </div>
+
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="marginleft" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav ">
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/course_page">课程简介 <span
+                                class="sr-only">(current)</span></a></li>
+                    <li class="active course-nav-link"><a href="/course/{{course.id}}/assignment/list">作业</a></li>
+                    {% if is_teacher %}
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/student/list">学生</a></li>
+                    {% endif %}
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/file/list">课件</a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/group/list">小组</a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/comment/list">讨论</a></li>
+                </ul>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                            aria-expanded="true">{{ username }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/account/">
+                                    个人信息
+                                </a>
+                            </li>
+                            <li><a data-toggle="modal" data-target="#change_password_modal">修改密码</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+    </nav>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="change_password_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">修改密码</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="password_change_form" enctype="multipart/form-data">
+                        <div class="clearfix">
+                            {% for field in changepwd_form%}
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label>
+                                        {{field.label}}
+                                    </label>
+                                    {{ field }}
+                                    <span class="error-msg" style="color: red;"></span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" id="ChangePassword" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="navbar-left">
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation">
+                <a href="/home/">
+                    <i class="fa fa-home" aria-hidden="true"></i>
+                    首页
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/account/">
+                    <i class="fa fa-address-card" aria-hidden="true"></i>
+                    账号
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/announce/">
+                    <i class="fa fa-envelope-open-o" aria-hidden="true"></i>
+                    通知
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/course/">
+                    <i class="fa fa-book" aria-hidden="true"></i>
+                    课程
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/calendar/">
+                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                    日历
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/help/">
+                    <i class="fa fa-question-circle-o" aria-hidden="true"></i>
+                    帮助
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="contianer marginleft">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">作业</h3>
+            </div>
+            <div class="panel-body">
+                {% if is_teacher %}
+                <p><a data-toggle="modal" data-target="#AssignmentAddModal" class="btn btn-primary"
+                        role="button">添加任务</a></p>
+                {% endif %}
+                {% for assignment in assignment_list %}
+                <div class="panel panel-default">
+                    <div class="panel-body" style="height: 100px;">
+                        <div class="contianer row">
+                            <div class="col-xs-1 col-md-1 assignment_height">
+                                <span class="glyphicon glyphicon-list-alt" style="margin-top: 18px;"
+                                    aria-hidden="true"></span>
+                                <span id="AssignmentID" class="hide">{{assignment.id}}</span>
+                            </div>
+                            <div class="col-xs-8 col-md-5 assignment_height">
+                                <h4>
+                                    <a href="/assignment/{{assignment.id}}/page">
+                                        {{ assignment.name }}
+                                    </a>
+                                </h4>
+                                <h6>
+                                    Due: {{ assignment.ddl }}
+                                </h6>
+                            </div>
+                            <div class="col-xs-3 col-md-2 assignment_height caption"
+                                style="float: right; margin-left: auto;">
+                                {% if is_teacher %}
+                                <p><a href="/course/{{course.id}}/assignment/{{assignment.id}}/update"
+                                        class="btn btn-primary" role="button">编辑任务</a></p>
+                                <p><a href="/course/{{course.id}}/assignment/{{assignment.id}}/delete"
+                                        class="btn btn-danger" role="button">删除任务</a></p>
+                                {% else %}
+                                <p id="GetMarks" style="margin-top: 15px;">
+                                <p>
+                                    {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- AssignmentAddModal -->
+    <div class="modal fade" id="AssignmentAddModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AssignmentAddLabel">新建任务</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="AssignmentAddForm" enctype="multipart/form-data">
+                        <div class="clearfix">
+                            {% for field in assignment_add_form%}
+                            <div class="col-xs-6">
+                                <div class="form-group">
+                                    <label>
+                                        {{field.label}}
+                                    </label>
+                                    {{ field }}
+                                    <span class="error-msg" style="color: red;"></span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" id="AssignmentAdd" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-datepicker-1.9.0/js/bootstrap-datepicker.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-datepicker-1.9.0/locales/bootstrap-datepicker.zh-CN.min.js' %}"></script>
+<script type="text/javascript">
+    $(function () {
+        $("#id_ddl").datepicker({
+            format: "yyyy-mm-dd",
+            clearBtn: true,
+            language: "zh-CN",
+            todayHighlight: true,
+        });
+        ChangePasswordEvent();
+        AssignmentAddEvent();
+        GetMarkEvent();
+    })
+
+    function ChangePasswordEvent() {
+        $("#ChangePassword").click(function () {
+            //清除错误信息
+            $(".error-msg").empty();
+            $.ajax({
+                url: "/password/change",
+                type: "post",
+                data: $("#password_change_form").serialize(),
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        alert("密码修改成功");
+                        //清空表单
+                        $("#password_change_form")[0].reset();
+                        //关闭对话框
+                        $("#change_password_modal").modal('hide');
+
+                    } else {
+                        $.each(res.error, function (name, errorlist) {
+                            $("#id_" + name).next().text(errorlist[0]);
+                        })
+                    }
+                }
+
+            })
+        });
+    }
+    function AssignmentAddEvent() {
+        $("#AssignmentAdd").click(function () {//清除错误信息
+            $(".error-msg").empty();
+            var data = new FormData($("#AssignmentAddForm")[0]);
+            //添加文本信息
+            $.ajax({
+                url: "/course/{{course.id}}/assignment/add",
+                type: "post",
+                data: data,
+                dataType: "JSON",
+                crossDomain: true,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.status) {
+                        alert("任务添加成功");
+                        $("#AssignmentAddForm")[0].reset();
+                        $("#AssignmentAddModal").modal("hide");
+                        location.reload("true");
+                    } else {
+                        $.each(res.error, function (name, errorlist) {
+                            $("#id_" + name).next().text(errorlist[0]);
+                        })
+                    }
+                }
+            });
+        });
+    }
+    function GetMarkEvent() {
+        const AssignemntID_list = document.querySelectorAll("#AssignmentID");
+        const Marks_list = document.querySelectorAll("#GetMarks");
+        for (let i = 0; i < AssignemntID_list.length; i++) {
+            var AssignemntID = AssignemntID_list[i].innerHTML;
+            $.ajax({
+                url: "/assignment/" + AssignemntID + "/student/{{id}}/marks/get",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        Marks_list[i].append("成绩:" + res.marks);
+                    } else {
+                        Marks_list[i].append("成绩:0/100");
+                    }
+                }
+            })
+        }
+    }
+</script>
+
+</hmtl>

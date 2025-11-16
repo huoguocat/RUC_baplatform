@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>任务评价</title>
+    </head> 
+    <body>
+        {% csrf_token %}
+        <h1>{{title}}<h1>
+        <a href="/assignment/{{id}}/comment/add">添加评价</a>
+        <a href="/assignment/{{id}}/comment/list">所有评价</a>
+        <a href="/assignment/{{id}}/mycomment/list">我的评价</a>
+        <table class="table">
+            <thead calss="thead-dark">
+                <tr>
+                    <th scope="col">评价</th>
+                    <th scope="col">提出人</th>
+                    <th scope="col">操作</th>
+                </tr>
+        </table>
+       
+        <tbody>
+            {% for comment in comment_list %}
+                <tr>
+                    {{comment.comment}}
+                    {{comment.user.username}}
+                    <td>
+                        <a href="/assignment/{{id}}/comment/{{comment.id}}/edit">编辑评价
+                        <a href="#">删除评价
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </body>
+</hmtl>

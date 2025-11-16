@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>课程列表</title>
+    </head> 
+    <body>
+        {% csrf_token %}
+        <h1>课程列表<h1>
+        {% if is_teacher %}
+            <a href="/course/add">添加课程</a>
+        {% endif %}
+        <table class="table">
+            <thead calss="thead-dark">
+                <tr>
+                    <th scope="col">课程编号</th>
+                    <th scope="col">课程名</th>
+                    <th scope="col">课程背景图</th>
+                    <th scope="col">授课老师</tr>
+                    <th scope="col">操作</th>
+                </tr>
+        </table>
+       
+        <tbody>
+            {% for course in course_list %}
+                <tr>
+                    <th scope="row">{{ course.id }}</td>
+                    <td>{{ course.name }}</td>
+                    <td><img src={{course.course_profile_pic.url}} style="height: 50px;width: 50px;"></td>
+                    <td>{{ course.teacher.name }}</td>
+                    <td>
+                        {% if is_teacher %}
+                            <a href="/course/{{course.id}}/delete">删除课程</a>
+                            <a href="/course/{{course.id}}/student/import">导入学生</a>
+                            <div><a href="/course/{{course.id}}/student/list">学生</a></div>
+                        {% endif %}   
+                        <a href="/course/{{course.id}}/course_page">进入课程</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </body>
+</hmtl>

@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>成绩列表</title>
+    </head> 
+    <body>
+        {% csrf_token %}
+        <h1>成绩列表<h1>
+        <table class="table">
+            <thead calss="thead-dark">
+                <tr>
+                    <td scope="col">任务序号</td>
+                    <td scope="col">任务名</td>
+                    <td scope="col">分数</td>
+                    <td scope="col">最大分数</td>
+                </tr>
+        </table>
+       
+        <tbody>
+            {% for marks in marks_list %}
+                <tr>
+                    <td>{{ marks.0 }}</td>
+                    <td>{{ marks.1 }}</td>
+                    <td>{{ marks.2 }}</td>
+                    <td>{{ marks.3 }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </body>
+</hmtl>

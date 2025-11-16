@@ -1,0 +1,337 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>管理员</title>
+    <link rel="stylesheet" href="../static/css/home.css">
+    <link rel="stylesheet" href="../static/plugins/bootstrap-3.4.1/css/bootstrap.css">
+    <link rel="stylesheet" href="../static/plugins/font-awesome-4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" href="../static/css/dragula.min.css">
+    <style>
+        .head {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: left;
+        }
+        .infobody {
+            margin-bottom: 0%;
+            text-align: left;
+        }
+        .right {
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="logo">
+                    <img src="../static/img/layout_logo.png">
+                </a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                            aria-expanded="true">{{ username }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a data-toggle="modal" data-target="#change_password_modal">修改密码</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
+    <!-- Modal -->
+    <div class="modal fade" id="change_password_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">修改密码</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="password_change_form" enctype="multipart/form-data">
+                        <div class="clearfix">
+                            {% for field in changepwd_form%}
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label>
+                                        {{field.label}}
+                                    </label>
+                                    {{ field }}
+                                    <span class="error-msg" style="color: red;"></span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" id="ChangePassword" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">教师账号管理</h3>
+            </div>
+            <div class="panel-body">
+                <div class="col-xs-6 col-md-3">
+                    <input type="file" id="teachers">
+                </div>
+                <div class="col-xs-6 col-md-3">
+                    <button class="btn btn-primary" role="button" id="importteacher"
+                        onclick="ImportTeacherEvent();">导入教师</button>
+                </div>
+
+                <div class="col-xs-6 col-md-3">
+                    <input type="text" name="username" class="form-control" placeholder="职工号" required="" id="teacher">
+                </div>
+                <div class="col-xs-6 col-md-3">
+                    <a class="btn btn-success" role="button" onclick="TeacherAdd();">添加老师</a>
+                </div>
+                <div class="col-xs-12 col-md-12">
+                    <div class="row">
+                        <div class="col-xs-3 col-md-3 head">教师顺序</div>
+                        <div class="col-xs-3 col-md-3 head">教师姓名</div>
+                        <div class="col-xs-3 col-md-3 head">教师职工号</div>
+                        <div class="col-xs-3 col-md-3 head">账号状态</div>
+                        <div id="ateacher">
+                            {% for teacher in teacher_list %}
+                            <div class="col-xs-12 col-md-12 alert alert-dismissible pointer infobody" role="alert">
+                                <div id="TeacherID" class="hide">{{ teacher.user.id }}</div>
+                                <div id="TeacherOrder" class="col-xs-3 col-md-3">
+                                    {{ teacher.order }}
+                                </div>
+                                <div class="col-xs-3 col-md-3">
+                                    {% if teacher.name %}
+                                    {{ teacher.name }}
+                                    {% else %}
+                                    未知
+                                    {% endif %}
+                                </div>
+                                <div class="col-xs-3 col-md-3">
+                                    {{ teacher.user.username }}
+                                </div>
+                                <div id="Operation" class="col-xs-3 col-md-3">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="col-xs-offset-8 col-md-offset-10">
+                    <button type="button" class="btn btn-default " onclick="CancelEvent();">取消</button>
+                    <button type="button" class="btn btn-primary " onclick="SaveTeacherOrderEvent();">保存</button>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">课程管理</h3>
+            </div>
+            <div class="panel-body">
+                <div class="col-xs-12 col-md-12">
+                    <div class="row">
+                        <div class="col-xs-6 col-md-6 head">课程顺序</div>
+                        <div class="col-xs-6 col-md-6 head">课程名称</div>
+                        <div id="acourse">
+                            {% for course in course_list %}
+                            <div class="col-xs-12 col-md-12 alert alert-dismissible pointer infobody" role="alert">
+                                <div id="CourseID" class="hide">{{ course.id }}</div>
+                                <div id="CourseOrder" class="col-xs-6 col-md-6">
+                                    {{ course.order }}
+                                </div>
+                                <div class="col-xs-6 col-md-6">
+                                    {{ course.name }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="col-xs-offset-8 col-md-offset-10">
+                    <button type="button" class="btn btn-default " onclick="CancelEvent();">取消</button>
+                    <button type="button" class="btn btn-primary " onclick="SaveCourseOrderEvent();">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+<script src="../static/js/jquery-3.6.3.min.js"></script>
+<script src="../static/plugins/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script src="../static/js/dragula.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        ChangePasswordEvent();
+        IsDisabledEvent();
+        dragula([document.getElementById('ateacher'), document.getElementById('acourse')]);
+    })
+    function ChangePasswordEvent() {
+        $("#ChangePassword").click(function () {
+            //清除错误信息
+            $(".error-msg").empty();
+            $.ajax({
+                url: "/password/change",
+                type: "post",
+                data: $("#password_change_form").serialize(),
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        alert("密码修改成功");
+                        //清空表单
+                        $("#password_change_form")[0].reset();
+                        //关闭对话框
+                        $("#change_password_modal").modal('hide');
+
+                    } else {
+                        $.each(res.error, function (name, errorlist) {
+                            $("#id_" + name).next().text(errorlist[0]);
+                        })
+                    }
+                }
+
+            })
+        });
+    }
+    function ImportTeacherEvent() {
+        var form_data = new FormData();
+        var file = document.getElementById('teachers').files[0];
+        form_data.append("file", file);
+        $.ajax({
+            url: "/teacher/import",
+            type: "post",
+            data: form_data,
+            dataType: "JSON",
+            crossDomain: true,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                if (res.status) {
+                    alert("导入成功");
+                    $('#teachers').val("");
+                    location.reload('true');
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+    }
+    function TeacherAdd() {
+        $.ajax({
+            url: "/teacher/add",
+            type: "post",
+            data: $("#teacher").serialize(),
+            dataType: "JSON",
+            success: function (res) {
+                if (res.status) {
+                    alert("添加成功");
+                    //清空表单
+                    $("#teacher").text("");
+                    //关闭对话框
+                    location.reload(true);
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+    }
+    function IsDisabledEvent() {
+        const TeacherID_list = document.querySelectorAll("#TeacherID");
+        const Operations_list = document.querySelectorAll("#Operation");
+        for (let i = 0; i < TeacherID_list.length; i++) {
+            var TeacherId = TeacherID_list[i].innerHTML;
+            $.ajax({
+                url: "/teacher/" + TeacherId + "/is_disabled",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        if (res.is_disabled) {
+                            var disabledstatusbutton = document.createElement("a");
+                            disabledstatusbutton.setAttribute("class", "btn btn-danger");
+                            disabledstatusbutton.setAttribute("role", "button")
+                            disabledstatusbutton.setAttribute("href", "/teacher/"+res.id+"/abled");
+                            disabledstatusbutton.innerText = "禁用";
+                            //var disabledstatusbutton = "<button type=\"button\" class=\"btn btn-danger\" onclick=\"AbledEvent();\">禁用</button>"
+                            Operations_list[i].appendChild(disabledstatusbutton);
+                        }
+                        else {
+                            var abledstatusbutton = document.createElement("a");
+                            abledstatusbutton.setAttribute("class", "btn btn-success");
+                            abledstatusbutton.setAttribute("role", "button")
+                            abledstatusbutton.setAttribute("href", "/teacher/"+res.id+"/disabled");
+                            abledstatusbutton.innerText = "正常";
+                            Operations_list[i].appendChild(abledstatusbutton);
+                        }
+                    } else {
+                        alert(res.msg);
+                    }
+                }
+            });
+        }
+    }
+    function CancelEvent(){
+        location.reload('true');
+    }
+    function SaveTeacherOrderEvent(){
+        let TeacherID_list = document.querySelectorAll("#TeacherID");
+        let Orders_list = document.querySelectorAll("#TeacherOrder");
+        for (let i = 0; i < TeacherID_list.length; i++) {
+            var TeacherId = TeacherID_list[i].innerHTML;
+            var order = i+1;
+            Orders_list[i].innerText = order;
+            $.ajax({
+                url: "/teacher/" + TeacherId + "/order/"+order+"/update",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if(res.status){
+                    } else{
+                        alert(res.msg);
+                    }
+                }
+            });
+        }
+    }
+    function SaveCourseOrderEvent(){
+        let CourseID_list = document.querySelectorAll("#CourseID");
+        let Orders_list = document.querySelectorAll("#CourseOrder");
+        for (let i = 0; i < CourseID_list.length; i++) {
+            var CourseId = CourseID_list[i].innerHTML;
+            var order = i+1;
+            Orders_list[i].innerText = order;
+            $.ajax({
+                url: "/course/" + CourseId + "/order/"+order+"/update",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if(res.status){
+                    } else{
+                        alert(res.msg);
+                    }
+                }
+            });
+        }
+    }
+</script>
+</hmtl>

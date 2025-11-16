@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+</head>
+<h1 style="text-align: center;">{{title}}</h1>
+<form method="post" enctype="multipart/form-data" class="col-xs-8 col-xs-offset-2 col-md-8 col-md-offset-2">
+    {% csrf_token %}
+    {% for field in form %}
+    {{ field.label }}: {{ field }}
+    {{ field.errors.0}}
+    {% endfor %}
+    <button type='submit'> 提交 </button>
+</form>
+<script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+</hmtl>

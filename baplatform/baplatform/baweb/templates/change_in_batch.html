@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>{{title}}</title>
+    </head>
+    <h1>{{title}}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %} 
+        {% for number in number_list %}
+            {% for field in form %}
+                {{ field.label }}: {{ field }}
+            {% endfor %}
+        {% endfor %}
+        <button type='submit'> 提交 </button>
+    </form>
+</hmtl>

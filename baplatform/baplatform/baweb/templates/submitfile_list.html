@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>提交文档列表</title>
+    </head> 
+    <body>
+        {% csrf_token %}
+        <h1>提交文档列表<h1>
+        <table class="table">
+            <thead calss="thead-dark">
+                <tr>
+                    <td scope="col">文件名</td>
+                    <td scope="col">操作</td>
+                </tr>
+        </table>
+       
+        <tbody>
+            {% for submit in submit_list %}
+                <tr>
+                    <td>{{ submit.file_name }}</td>
+                    <li><a href="{{ submit.file.url }}">下载查看</a></li>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </body>
+</hmtl>

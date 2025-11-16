@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>学生列表</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        .course-nav-heading {
+            float: left;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+        .course-nav-link {
+            margin-top: 6px;
+        }
+        .right{
+            float: right;
+        }
+    </style>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+                <div class="marginleft clearfix">
+                    <button type="button" class="navbar-toggle" style="float: right;" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <span class="course-nav-heading">
+                        <a href="/course/{{course.id}}/course_page">
+                            <h3>
+                                {{course.name}}
+                            </h3>
+                        </a>
+                    </span>
+                </div>
+
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="marginleft" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav ">
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/course_page">课程简介 <span
+                                class="sr-only">(current)</span></a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/assignment/list">作业</a></li>
+                    {% if is_teacher %}
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/student/list">学生</a></li>
+                    {% endif %}
+                    <li class="active course-nav-link"><a href="/course/{{course.id}}/file/list">课件</a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/group/list">小组</a></li>
+                    <li class="course-nav-link"><a href="/course/{{course.id}}/comment/list">讨论</a></li>
+                </ul>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                            aria-expanded="true">{{ username }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="/account/">
+                                    个人信息
+                                </a>
+                            </li>
+                            <li><a data-toggle="modal" data-target="#change_password_modal">修改密码</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+    </nav>
+    <!-- Modal -->
+    <div class="modal fade" id="change_password_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">修改密码</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="password_change_form" enctype="multipart/form-data">
+                        <div class="clearfix">
+                            {% for field in changepwd_form%}
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label>
+                                        {{field.label}}
+                                    </label>
+                                    {{ field }}
+                                    <span class="error-msg" style="color: red;"></span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" id="ChangePassword" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="navbar-left">
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation">
+                <a href="/home/">
+                    <i class="fa fa-home" aria-hidden="true"></i>
+                    首页
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/account/">
+                    <i class="fa fa-address-card" aria-hidden="true"></i>
+                    账号
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/announce/">
+                    <i class="fa fa-envelope-open-o" aria-hidden="true"></i>
+                    通知
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/course/">
+                    <i class="fa fa-book" aria-hidden="true"></i>
+                    课程
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/calendar/">
+                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                    日历
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="/help/">
+                    <i class="fa fa-question-circle-o" aria-hidden="true"></i>
+                    帮助
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="contianer marginleft">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">课件</h3>
+            </div>
+            <div class="panel-body clearfix">
+                {% if is_teacher %}
+                <form id="UploadFileForm" enctype="multipart/form-data">
+                    {% for field in coursefileform %}
+                    <div class="col-xs-6 col-md-6">
+                        <div class="form-group">
+                            <label>
+                                {{field.label}}
+                            </label>
+                            {{ field }}
+                            <span class="error-msg" style="color: red;"></span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </form>
+                <span>
+                    <a id="UploadCourseFile" class="btn btn-primary right" role="button" onclick="UploadCourseFile();">
+                        提交
+                    </a>
+                </span>
+                <span>
+                    <a id="AddInput" class="btn btn-default right" role="button" onclick="AddInput();">
+                        添加
+                    </a>
+                </span>
+                {% endif %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>课件名</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in file_list %}
+                        <tr>
+                            <td>{{ file.file_name }}</td>
+                            <td>
+                                
+                                <span><a href="{{file.file.url}}" class="btn btn-primary"
+                                        role="button">下载</a></span>
+                                {% if is_teacher %}
+                                <span><a href="/course/{{course.id}}/file/{{file.id}}/delete"
+                                        class="btn btn-danger" role="button">删除</a></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+<script type="text/javascript">
+    $(function () {
+        ChangePasswordEvent();
+    })
+    function ChangePasswordEvent() {
+        $("#ChangePassword").click(function () {
+            //清除错误信息
+            $(".error-msg").empty();
+            $.ajax({
+                url: "/password/change",
+                type: "post",
+                data: $("#password_change_form").serialize(),
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        alert("密码修改成功");
+                        //清空表单
+                        $("#password_change_form")[0].reset();
+                        //关闭对话框
+                        $("#change_password_modal").modal('hide');
+
+                    } else {
+                        $.each(res.error, function (name, errorlist) {
+                            $("#id_" + name).next().text(errorlist[0]);
+                        })
+                    }
+                }
+
+            })
+        });
+    }
+    function AddInput(){
+        var inputform = "<div class=\"col-xs-6 col-mc-6\"><div class=\"form-group\"><label>课件</label><input type=\"file\" name=\"file\" class=\"form-control\" placeholder=\"课件\" required=\"\" id=\"id_file\"><span class=\"error-msg\" style=\"color: red;\"></span></div></div><div class=\"col-xs-6 col-mc-6\"><div class=\"form-group\"><label>课件名</label><input type=\"text\" name=\"file_name\" maxlength=\"64\" class=\"form-control\" placeholder=\"课件名\" id=\"id_file_name\"><span class=\"error-msg\" style=\"color: red;\"></span></div></div>";
+        $("#UploadFileForm").append(inputform);
+    }
+    function UploadCourseFile() {
+        $(".error-msg").empty();
+        var data = new FormData($("#UploadFileForm")[0]);
+        $.ajax({
+            url: "/course/{{course.id}}/file/add",
+            type: "post",
+            data: data,
+            dataType: "JSON",
+            crossDomain: true,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                if (res.status) {
+                    alert("添加成功");
+                    $("#UploadFileForm")[0].reset();
+                } else {
+                    $.each(res.error, function (name, errorlist) {
+                        $("#id_" + name).next().text(errorlist[0]);
+                    });
+                }
+            }
+        });
+    }
+</script>
+</hmtl>

@@ -1,0 +1,42 @@
+body {
+    margin: 0px;
+}
+
+.navbar {
+    border-radius: 0;
+    height: 64px;
+    margin-bottom: 5px;
+}
+
+.container-fluid {
+    padding-left: 0px;
+}
+
+.logo {
+    float: left;
+    width: 189px;
+    height: 64px;
+    padding-left: 15px;
+    border: 1px #fff solid;
+    box-shadow: 5px;
+}
+
+.logo img {
+    padding-left: auto;
+    width: 64px;
+    height: 64px;
+}
+
+img {
+    width: 100%;
+}
+
+.navbar-left {
+    border-radius: 0px;
+    width: 189px;
+    padding-top: 0px;
+}
+
+.marginleft {
+    margin-left: 209px !important;
+}

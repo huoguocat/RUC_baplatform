@@ -1,0 +1,16 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>任务页面</title>
+    </head>
+
+    <h1> 任务简介 {{assignment.description}}</h1>
+    <div><a href="/assignment/{{assignment.id}}/file/list">文档</a></div>
+    <div><a href="/assignment/{{assignment.id}}/comment/list">评论</a></div>
+    {% if is_teacher%}
+        <div><a href="/assignment/{{assignment.id}}/submit/list">任务提交情况</a></div>
+        <div><a href="/assignment/{{assignment.id}}/unsubmit/list">任务未提交情况</a></div>
+    {% endif %}
+</html>

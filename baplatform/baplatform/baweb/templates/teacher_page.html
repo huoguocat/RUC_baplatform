@@ -1,0 +1,13 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>教师页面</title>
+    </head>
+
+    <h1> 教师页面 {{teacherinfo.user.username}}</h1>
+    <div><a href="/teacher/{{teacherinfo.user.id}}/info">个人信息</a></div>
+    <div><a href="/course/list">课程列表</a></div>
+    <div><a href="/logout/">撤销</a></div>
+</html>

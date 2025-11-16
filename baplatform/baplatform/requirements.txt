@@ -1,0 +1,8 @@
+# python==3.7
+django==2.2.12
+django-ckeditor==6.3.2
+django-js-asset==2.0.0
+Werkzeug==2.2.3
+django-werkzeug-debugger-runserver==0.3.1
+openpyxl==3.1.2
+pillow==9.5.0

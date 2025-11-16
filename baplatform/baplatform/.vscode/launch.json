@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Django Server",  // 配置名（可自定义）
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",  // 指向项目根目录的 manage.py
+            "args": [
+                "runserver"  // Django 启动命令（等同于 python manage.py runserver）
+            ],
+            "django": true,  // 启用 Django 模式（VS Code 会识别 Django 日志）
+            "console": "integratedTerminal"  // 在集成终端显示输出
+        }
+    ]
+}
