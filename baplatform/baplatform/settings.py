@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'baweb.apps.BawebConfig',
     'ckeditor',
-    #'werkzeug_debugger_runserver',
+    'werkzeug_debugger_runserver',
     'django_extensions',
     'sslserver',
 ]

@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>登录</title> 
+    <title>登录与注册</title> 
     <link rel="stylesheet" href="../static/css/login.css">
     <link rel="stylesheet" href="../static/plugins/bootstrap-3.4.1/css/bootstrap.css">
     <link rel="stylesheet" href="../static/plugins/font-awesome-4.7.0/css/font-awesome.css">
@@ -19,38 +19,87 @@
                 <img src="../static/img/logo.png">
             </h1>
             <div class="content">
-                <h2 class="wordstyle">登录</h2>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label class="wordstyle left">用户名:</label>
-                        {{ form.username }}
-                        <span class="error-msg" style="color: red;"> {{ form.username.errors.0 }}</span>
-                    </div>
+                <!-- 标签页切换 -->
+                <div class="tab-container">
+                    <ul class="nav-tabs">
+                        <li class="active"><a href="#login-tab" data-toggle="tab">登录</a></li>
+                        <li><a href="#signup-tab" data-toggle="tab">注册</a></li>
+                    </ul>
+                    
+                    <!-- 登录表单 -->
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="login-tab">
+                            <h2 class="wordstyle">登录</h2>
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label class="wordstyle left">用户名:</label>
+                                    {{ form.username }}
+                                    <span class="error-msg" style="color: red;"> {{ form.username.errors.0 }}</span>
+                                </div>
 
-                    <div class="form-group">
-                        <label class="wordstyle left">密码:</label>
-                        {{ form.password }}
-                        <span class="error-msg" style="color: red;">{{ form.password.errors.0 }}</span>
-                    </div>
+                                <div class="form-group">
+                                    <label class="wordstyle left">密码:</label>
+                                    {{ form.password }}
+                                    <span class="error-msg" style="color: red;">{{ form.password.errors.0 }}</span>
+                                </div>
 
-                    <div class="form-group">
-                        <div>
-                            <label class="wordstyle left">图片验证码：</label>
+                                <div class="form-group">
+                                    <div>
+                                        <label class="wordstyle left">图片验证码：</label>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 ">
+                                            {{ form.code }}
+                                        </div>
+                                        <div class="col-md-4" style="padding-left: 0px;">
+                                            <img id='image_code' src="/image/code/" onclick="Reload();">
+                                        </div>                          
+                                    </div>  
+                                    <span class="error-msg" style="color: red;">{{ form.code.errors.0 }}</span>
+                                </div>
+
+                                <input type="submit" value="登录" class="btn btn-primary buttonstyle">
+                            </form>
                         </div>
-                        <div class="row">
-                            <div class="col-md-4 ">
-                                {{ form.code }}
-                            </div>
-                            <div class="col-md-4" style="padding-left: 0px;">
-                                <img id='image_code' src="/image/code/" onclick="Reload();">
-                            </div>                          
-                        </div>  
-                        <span class="error-msg" style="color: red;">{{ form.code.errors.0 }}</span>
-                    </div>
 
-                    <input type="submit" value="登录" class="btn btn-primary buttonstyle">
-                </form>
+                        <!-- 注册表单 -->
+                        <div class="tab-pane" id="signup-tab">
+                            <h2 class="wordstyle">注册</h2>
+                            <form id="signup-form" method="post" action="/signup/">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label class="wordstyle left">用户名:</label>
+                                    <input type="text" name="username" class="form-control" required>
+                                    <span id="signup-username-error" style="color: red;"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="wordstyle left">密码:</label>
+                                    <input type="password" name="password" class="form-control" required>
+                                    <span id="signup-password-error" style="color: red;"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="wordstyle left">确认密码:</label>
+                                    <input type="password" name="confirm_password" class="form-control" required>
+                                    <span id="signup-confirm-error" style="color: red;"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="wordstyle left">用户类型:</label>
+                                    <select name="type" class="form-control" required>
+                                        <option value="1">学生</option>
+                                        <option value="2">教师</option>
+                                    </select>
+                                </div>
+
+                                <input type="submit" value="注册" class="btn btn-primary buttonstyle">
+                                <div id="signup-message" style="margin-top: 10px; color: green;"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -61,5 +110,59 @@
     function Reload(){
         location.reload("true");
     }
+
+    // 注册表单提交处理
+    $(document).ready(function() {
+        $('#signup-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            // 重置错误信息
+            $('#signup-username-error').text('');
+            $('#signup-password-error').text('');
+            $('#signup-confirm-error').text('');
+            $('#signup-message').text('');
+            
+            // 获取表单数据
+            const formData = {
+                username: $('input[name="username"]').val(),
+                password: $('input[name="password"]').val(),
+                confirm_password: $('input[name="confirm_password"]').val(),
+                type: $('select[name="type"]').val(),
+                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+            };
+            
+            // 简单验证
+            if (formData.password !== formData.confirm_password) {
+                $('#signup-confirm-error').text('两次输入的密码不一致');
+                return;
+            }
+            
+            // 发送AJAX请求
+            $.ajax({
+                url: '/signup/',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status) {
+                        $('#signup-message').text('注册成功，请登录');
+                        // 切换到登录标签页
+                        $('.nav-tabs li:first-child a').tab('show');
+                    } else {
+                        // 显示错误信息
+                        if (response.error.username) {
+                            $('#signup-username-error').text(response.error.username[0]);
+                        }
+                        if (response.error.password) {
+                            $('#signup-password-error').text(response.error.password[0]);
+                        }
+                    }
+                },
+                error: function() {
+                    $('#signup-message').text('注册失败，请稍后重试').css('color', 'red');
+                }
+            });
+        });
+    });
 </script>
-</hmtl>
+</html>

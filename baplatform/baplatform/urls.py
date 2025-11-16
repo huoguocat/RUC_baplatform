@@ -23,7 +23,7 @@ urlpatterns = [
     ##用户通用功能
     
     path('', user.user_home),
-    #path('signup/', user.user_signup),
+    path('signup/', user.user_signup),
     path('login/', user.user_login), 
     path('logout/', user.user_logout),
     ##管理员功能

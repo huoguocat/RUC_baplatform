@@ -53,10 +53,10 @@ def user_admin(request):
 
 def user_login(request):
     '''用户登录'''
-    signupform =  UserModelForm
+    signupform =  UserModelForm()
     if request.method == 'GET':
         form = UserLoginForm()
-        return render(request, "login.html", {'form': form, "signupform":signupform})
+        return render(request, "login.html", {'form': form, "signupform": signupform})
 
     form = UserLoginForm(data=request.POST)
     if form.is_valid():
@@ -65,14 +65,14 @@ def user_login(request):
         # 验证码校验
         if code.upper() != user_input_code.upper():
             form.add_error("code", "验证码错误")
-            return render(request, "login.html", {'form': form})
+            return render(request, "login.html", {'form': form, "signupform": signupform})
 
         user_object = models.User.objects.filter(**form.cleaned_data).first()
         # print(user_object)
         # 密码校验
         if not user_object:
             form.add_error("password", "用户名或密码错误")
-            return render(request, "login.html", {'form': form})
+            return render(request, "login.html", {'form': form, "signupform": signupform})
 
         exists = models.TeacherDisabled.objects.filter(teacher=user_object).exists()
         if exists:
@@ -85,7 +85,7 @@ def user_login(request):
             return redirect('/admin/')
         return redirect('/home/')
 
-    return render(request, "login.html", {'form': form, "signupform":signupform})
+    return render(request, "login.html", {'form': form, "signupform": signupform})
 
 
 def user_logout(request):
