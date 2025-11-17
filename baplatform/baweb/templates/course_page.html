@@ -62,10 +62,16 @@
                     {% endif %}
                     <li class="course-nav-link"><a href="/course/{{course.id}}/file/list">课件</a></li>
                     <li class="course-nav-link"><a href="/course/{{course.id}}/group/list">小组</a></li>
-                    <li class="course-nav-link"><a href="/course/{{course.id}}/comment/list">讨论</a></li>
+             
                 </ul>
             </div>
-
+<!-- 课程论坛入口按钮 -->
+<div class="course-action-buttons" style="margin: 20px 0;">
+    <a href="/forum/course/{{ course.id }}/posts/" class="btn btn-success">
+        <i class="fa fa-comments-o" aria-hidden="true"></i>
+        课程论坛帖子
+    </a>
+</div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">

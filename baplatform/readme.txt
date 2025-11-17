@@ -23,3 +23,9 @@ python manage.py createsuperuser
 # 在 baplatform 目录
 python manage.py runserver 0.0.0.0:8000
 http://127.0.0.1:8000/
+
+
+E:
+cd study\systemAnalysis\baplatform\baplatform
+conda activate myenv
+python manage.py runserver
