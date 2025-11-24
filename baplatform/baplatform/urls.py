@@ -17,6 +17,7 @@ from django.urls import path,include
 from baweb.views import home,admin, user, student, course, teacher, file, assignment, assignmentfile, comment, group, announce,post
 from django.conf import settings
 from django.conf.urls.static import static
+from baweb.views import forum 
 
 urlpatterns = [
     #path('superadmin/', superadmin.site.urls),
@@ -123,6 +124,6 @@ urlpatterns = [
     ##老师课程展示
     path("teacher/<int:id>/course/list", course.teacher_courses),
     ##论坛模块（后期整合之后记得把view改成正确的对象）
-    path('forum/course/<int:course_id>/posts/', post.course_forum, name='course_forum'),
-    path('forum/course/<int:course_id>/course_post/', post.course_forum, name='course_forum'),
+
+   path('forum/course/<int:course_id>/posts/', post.post_list, name='course_forum')
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
