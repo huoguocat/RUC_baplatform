@@ -1,10 +1,17 @@
 from django.shortcuts import render, get_object_or_404
-from baweb.models import Course, Post  # 导入模型
+from baweb.models import Course, Post, StudentCourse  # 导入模型
 from django.db.models import Q
 
 def post_list(request, course_id):
     # 获取当前课程
     course = get_object_or_404(Course, id=course_id)
+    
+    # 判断用户身份
+    is_login = request.session.get('is_login', False)
+    is_teacher = False
+    if is_login:
+        user_type = request.session.get('user_type')
+        is_teacher = (user_type == 2)
     
     # 基础查询：获取该课程的所有帖子
     posts_query = Post.objects.filter(course=course).select_related('author', 'category')
@@ -37,14 +44,26 @@ def post_list(request, course_id):
     page = request.GET.get('page', 1)
     posts = paginator.get_page(page)
     
+    # 获取当前用户信息
+    current_user = None
+    user_rank = 10
+    if is_login:
+        from baweb.models import User
+        user_id = request.session.get('user_id')
+        try:
+            current_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            current_user = None
+    
     # 传递真实数据到模板
     return render(request, 'forum/course_post.html', {
         'course': course,
         'posts': posts,  # 数据库查询的帖子列表
         'keyword': keyword,
         'sort_by': sort_by,
-        'user': request.user,  # 当前登录用户
-        # 个人信息相关（从用户表查询）
-        'user_rank': 10,  # 后续可从积分系统查询真实排行
-        # 'user_rank': get_user_rank(request.user)  # 示例：调用排行查询函数
+        'has_bounty': has_bounty,
+        'is_login': is_login,
+        'is_teacher': is_teacher,
+        'user': current_user if current_user else {'username': '游客'},
+        'user_rank': user_rank,  # 后续可从积分系统查询真实排行
     })

@@ -29,3 +29,6 @@ E:
 cd study\systemAnalysis\baplatform\baplatform
 conda activate myenv
 python manage.py runserver
+
+
+ conda activate baplatform_env

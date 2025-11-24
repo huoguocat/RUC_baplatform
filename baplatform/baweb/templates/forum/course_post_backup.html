@@ -1,0 +1,270 @@
+{% load static %}  <!-- 新增：加载静态文件 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ course.name }} - 课程论坛</title>
+    <!-- 替换为项目本地的Bootstrap和静态资源 -->
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        /* 保留原自定义样式，新增与项目一致的导航样式 */
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .panel {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .list-group-item {
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+        }
+        .list-group-item:first-child {
+            border-top: none;
+        }
+        /* 项目通用导航样式 */
+        .course-nav-heading {
+            float: left;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+        .course-nav-link {
+            margin-top: 6px;
+        }
+        .right {
+            float: right;
+        }
+    </style>
+</head>
+<body>
+    <!-- 替换为项目统一的导航栏（参考course_page.html） -->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+                <div class="marginleft clearfix">
+                    <button type="button" class="navbar-toggle" style="float: right;" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <span class="course-nav-heading">
+                        <a href="/course/{{ course.id }}/course_page">
+                            <h3>{{ course.name }}</h3>
+                        </a>
+                    </span>
+                </div>
+            </div>
+            <!-- 课程导航菜单（与其他页面保持一致） -->
+            <div class="marginleft" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li class="course-nav-link"><a href="/course/{{ course.id }}/course_page">课程简介</a></li>
+                    <li class="course-nav-link"><a href="/course/{{ course.id }}/assignment/list">作业</a></li>
+                    {% if is_teacher %}
+                    <li class="course-nav-link"><a href="/course/{{ course.id }}/student/list">学生</a></li>
+                    {% endif %}
+                    <li class="course-nav-link"><a href="/course/{{ course.id }}/file/list">课件</a></li>
+                    <li class="course-nav-link"><a href="/course/{{ course.id }}/group/list">小组</a></li>
+                    <li class="active course-nav-link"><a href="/forum/course/{{ course.id }}/posts/">论坛</a></li>
+                </ul>
+            </div>
+            <!-- 用户菜单 -->
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    {% if is_login %}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                            aria-expanded="true">{{ user.username }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/account/">个人信息</a></li>
+                            <li><a data-toggle="modal" data-target="#change_password_modal">修改密码</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li><a href="/login/">登录</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 原页面内容从这里开始 -->
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1>{{ course.name }} <small>课程论坛</small></h1>
+        </div>
+
+        <!-- 左侧导航栏优化 -->
+        <div class="row">
+            <div class="col-md-2">
+                <div class="panel panel-default">
+                    <div class="panel-heading">论坛导航</div>
+                    <ul class="list-group">
+                        <!-- 修复论坛首页链接（使用当前课程ID） -->
+                        <li class="list-group-item">
+                            <a href="/forum/course/{{ course.id }}/posts/">论坛首页</a>
+                        </li>
+                        <!-- 保留筛选链接，确保参数正确传递 -->
+                        <li class="list-group-item">
+                            <a href="?has_bounty=1{% if keyword %}&keyword={{ keyword }}{% endif %}">仅看有悬赏</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="?sort_by=heat{% if keyword %}&keyword={{ keyword }}{% endif %}">按热度排行</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="?sort_by=newest{% if keyword %}&keyword={{ keyword }}{% endif %}">按时间排行</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 中间内容区完善 -->
+            <div class="col-md-7">
+                <!-- 课程信息提示 -->
+                <div class="alert alert-info" role="alert">
+                    当前课程：{{ course.name }}（授课老师：{{ course.teacher.name }}）
+                </div>
+
+                <!-- 搜索框（保留，确保与视图交互） -->
+                <div class="panel panel-default" style="margin-bottom: 20px;">
+                    <div class="panel-body">
+                        <form method="get" action="">
+                            <div class="input-group">
+                                <input type="text" name="keyword" class="form-control" 
+                                       placeholder="搜索本课程帖子..." value="{{ keyword }}">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="submit">搜索</button>
+                                </span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 发布帖子区域（优化悬赏输入与发布按钮关联） -->
+                <div class="panel panel-primary" style="margin-bottom: 20px;">
+                    <div class="panel-heading">发布新帖子</div>
+                    <div class="panel-body">
+                        <!-- 改为表单提交，传递悬赏积分 -->
+                        <form action="/forum/course/{{ course.id }}/create/" method="get">
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label for="bounty">悬赏积分（可选）</label>
+                                <input type="number" class="form-control" id="bounty" name="bounty"
+                                       placeholder="设置悬赏积分吸引更多回复" min="0" value="0">
+                            </div>
+                            <button type="submit" class="btn btn-block btn-success">发布帖子</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 帖子列表（与数据库字段匹配） -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">帖子列表</div>
+                    <div class="list-group">
+                        {% for post in posts %}
+                        <a href="/forum/post/{{ post.postId }}/" class="list-group-item">
+                            <div class="row">
+                                <!-- 悬赏金额 -->
+                                <div class="col-md-1">
+                                    {% if post.bounty > 0 %}
+                                    <span class="label label-danger">{{ post.bounty }} 分</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 帖子标题和作者信息 -->
+                                <div class="col-md-7">
+                                    <h5 class="list-group-item-heading">{{ post.title }}</h5>
+                                    <p class="list-group-item-text text-muted">
+                                        作者: {% if post.isAnonymous %}匿名{% else %}{{ post.author.username }}{% endif %} 
+                                        · 发布于 {{ post.createdAt|date:"Y-m-d H:i" }}
+                                    </p>
+                                </div>
+                                
+                                <!-- 统计信息 -->
+                                <div class="col-md-4 text-right">
+                                    <span class="badge">评论: {{ post.commentCount }}</span>
+                                    <span class="badge">点赞: {{ post.likeCount }}</span>
+                                </div>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-center">
+                            暂无帖子，快来发布第一个帖子吧！
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- 分页（保持不变，Django分页逻辑已支持） -->
+                    <div class="panel-footer">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if posts.has_previous %}
+                                <li>
+                                    <a href="?page={{ posts.previous_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if has_bounty %}&has_bounty=1{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">
+                                        上一页
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                <li class="active">
+                                    <span>{{ posts.number }} / {{ posts.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if posts.has_next %}
+                                <li>
+                                    <a href="?page={{ posts.next_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if has_bounty %}&has_bounty=1{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">
+                                        下一页
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧个人信息区（保持不变，与用户模型匹配） -->
+            <div class="col-md-3">
+                <div class="panel panel-default">
+                    <div class="panel-heading">个人中心</div>
+                    <div class="panel-body text-center">
+                        <img src="{{ user.avatar.url|default:'/static/img/default_avatar.png' }}" 
+                             class="img-circle" style="width: 100px; height: 100px;" alt="个人头像">
+                        
+                        <h4 style="margin-top: 10px;">{{ user.username|default:"游客" }}</h4>
+                        
+                        <div class="list-group" style="margin-top: 20px;">
+                            <li class="list-group-item">
+                                论坛排行: <span class="badge">{{ user_rank|default:"--" }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                悬赏积分: <span class="badge">{{ user.bounty_points|default:0 }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="/forum/my/collected/">我的收藏</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="/forum/my/posts/">我的帖子</a>
+                            </li>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入项目本地脚本 -->
+    <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+    <script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+</body>
+</html>

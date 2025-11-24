@@ -16,6 +16,93 @@ from baweb import models
 from ..forms.postforms import PostCreateForm, PostUpdateForm, PostCommentForm, PostSearchForm
 
 
+def forum_index(request):
+    """
+    论坛首页 - 汇总所有课程的帖子,包括不属于课程的帖子
+    
+    Returns:
+        renders forum/forum_index.html with all posts
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    # 基础查询:获取所有帖子
+    posts_query = models.Post.objects.all().select_related('author', 'category', 'course')
+    
+    # 处理筛选条件
+    # 1. 课程筛选
+    course_id = request.GET.get('course_id')
+    if course_id:
+        if course_id == 'none':  # 无课程帖子
+            posts_query = posts_query.filter(course__isnull=True)
+        else:
+            try:
+                posts_query = posts_query.filter(course_id=int(course_id))
+            except (ValueError, TypeError):
+                pass
+    
+    # 2. 分类筛选
+    category_id = request.GET.get('category_id')
+    if category_id:
+        try:
+            posts_query = posts_query.filter(category_id=int(category_id))
+        except (ValueError, TypeError):
+            pass
+    
+    # 3. 搜索功能
+    keyword = request.GET.get('keyword', '')
+    if keyword:
+        posts_query = posts_query.filter(
+            Q(title__icontains=keyword) | Q(content__icontains=keyword)
+        )
+    
+    # 4. 排序逻辑
+    sort_by = request.GET.get('sort_by', 'heat')
+    if sort_by == 'newest':
+        posts_query = posts_query.order_by('-createdAt')
+    elif sort_by == 'hot':
+        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+    else:  # 默认热度
+        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+    
+    # 分页处理
+    paginator = Paginator(posts_query, 20)  # 首页每页20条
+    page_num = request.GET.get('page', 1)
+    posts_page = paginator.get_page(page_num)
+    
+    # 获取所有课程用于筛选
+    courses = models.Course.objects.all().order_by('order')
+    
+    # 获取所有分类
+    categories = models.ContentCategory.objects.all()
+    
+    # 获取统计数据
+    total_posts = models.Post.objects.count()
+    total_comments = models.PostComment.objects.count()
+    
+    # 处理标签
+    for post in posts_page:
+        if post.tags:
+            post.tags_list = [tag.strip() for tag in post.tags.split(',') if tag.strip()]
+        else:
+            post.tags_list = []
+    
+    context = {
+        'posts': posts_page,
+        'courses': courses,
+        'categories': categories,
+        'keyword': keyword,
+        'sort_by': sort_by,
+        'selected_course_id': course_id,
+        'selected_category_id': category_id,
+        'user_id': user_id,
+        'total_posts': total_posts,
+        'total_comments': total_comments,
+    }
+    
+    return render(request, 'forum/forum_index.html', context)
+
+
 @require_http_methods(["GET"])
 def post_list(request, course_id):
     """
@@ -125,6 +212,11 @@ def post_detail(request, post_id):
     # 评论表单
     comment_form = PostCommentForm()
     
+    # 处理标签
+    tags_list = []
+    if post.tags:
+        tags_list = [tag.strip() for tag in post.tags.split(',') if tag.strip()]
+    
     context = {
         'post': post,
         'comments': comments_page,
@@ -132,6 +224,7 @@ def post_detail(request, post_id):
         'user_id': user_id,
         'has_liked': has_liked,
         'has_collected': has_collected,
+        'tags_list': tags_list,
     }
     
     return render(request, 'forum/post_detail.html', context)
@@ -139,12 +232,12 @@ def post_detail(request, post_id):
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
-def post_create(request, course_id):
+def post_create(request, course_id=None):
     """
     创建新帖子
     
     Args:
-        course_id: 课程ID，0表示不对应任何课程
+        course_id: 课程ID，None表示不对应任何课程
     
     Returns:
         GET: renders post_create.html with form
@@ -161,9 +254,9 @@ def post_create(request, course_id):
     if not user or user.type == 3:  # 管理员不能发帖
         return JsonResponse({"status": False, "msg": "没有权限"})
     
-    # 获取课程（course_id=0表示不对应任何课程）
+    # 获取课程（course_id=None表示不对应任何课程）
     course = None
-    if course_id != 0:
+    if course_id:
         course = models.Course.objects.filter(id=course_id).first()
         if not course:
             return JsonResponse({"status": False, "msg": "课程不存在"})
@@ -479,3 +572,123 @@ def comment_like(request, comment_id):
         "msg": "评论已点赞",
         "like_count": comment.likeCount,
     })
+
+
+def my_posts(request):
+    """
+    我的帖子页面
+    显示当前用户发布的所有帖子
+    
+    Returns:
+        renders forum/my_posts.html with user's posts
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    if not user_id:
+        return redirect('/login/')
+    
+    user = models.User.objects.filter(id=user_id).first()
+    if not user:
+        return redirect('/login/')
+    
+    # 获取用户发布的帖子
+    posts_query = models.Post.objects.filter(author=user).select_related('course', 'category')
+    
+    # 排序
+    sort_by = request.GET.get('sort_by', 'newest')
+    if sort_by == 'hot':
+        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+    else:
+        posts_query = posts_query.order_by('-createdAt')
+    
+    # 搜索
+    keyword = request.GET.get('keyword', '')
+    if keyword:
+        from django.db.models import Q
+        posts_query = posts_query.filter(
+            Q(title__icontains=keyword) | Q(content__icontains=keyword)
+        )
+    
+    # 分页
+    paginator = Paginator(posts_query, 15)
+    page_num = request.GET.get('page', 1)
+    posts_page = paginator.get_page(page_num)
+    
+    # 处理标签
+    for post in posts_page:
+        if post.tags:
+            post.tags_list = [tag.strip() for tag in post.tags.split(',') if tag.strip()]
+        else:
+            post.tags_list = []
+    
+    # 统计数据
+    total_posts = models.Post.objects.filter(author=user).count()
+    total_likes = sum(models.Post.objects.filter(author=user).values_list('likeCount', flat=True))
+    total_comments = sum(models.Post.objects.filter(author=user).values_list('commentCount', flat=True))
+    
+    context = {
+        'posts': posts_page,
+        'user': user,
+        'keyword': keyword,
+        'sort_by': sort_by,
+        'total_posts': total_posts,
+        'total_likes': total_likes,
+        'total_comments': total_comments,
+    }
+    
+    return render(request, 'forum/my_posts.html', context)
+
+
+def my_collected(request):
+    """
+    我的收藏页面
+    显示当前用户收藏的所有帖子
+    
+    Returns:
+        renders forum/my_collected.html with user's collected posts
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    if not user_id:
+        return redirect('/login/')
+    
+    user = models.User.objects.filter(id=user_id).first()
+    if not user:
+        return redirect('/login/')
+    
+    # 获取用户收藏的帖子
+    collects_query = models.PostCollect.objects.filter(user=user).select_related('post', 'post__author', 'post__course', 'post__category').order_by('-createdAt')
+    
+    # 搜索
+    keyword = request.GET.get('keyword', '')
+    if keyword:
+        from django.db.models import Q
+        collects_query = collects_query.filter(
+            Q(post__title__icontains=keyword) | Q(post__content__icontains=keyword)
+        )
+    
+    # 分页
+    paginator = Paginator(collects_query, 15)
+    page_num = request.GET.get('page', 1)
+    collects_page = paginator.get_page(page_num)
+    
+    # 处理标签
+    for collect in collects_page:
+        if collect.post.tags:
+            collect.post.tags_list = [tag.strip() for tag in collect.post.tags.split(',') if tag.strip()]
+        else:
+            collect.post.tags_list = []
+    
+    # 统计数据
+    total_collected = models.PostCollect.objects.filter(user=user).count()
+    
+    context = {
+        'collects': collects_page,
+        'user': user,
+        'keyword': keyword,
+        'total_collected': total_collected,
+    }
+    
+    return render(request, 'forum/my_collected.html', context)

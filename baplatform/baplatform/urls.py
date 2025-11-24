@@ -123,7 +123,19 @@ urlpatterns = [
     path('ckeditor/', include('ckeditor_uploader.urls')),
     ##老师课程展示
     path("teacher/<int:id>/course/list", course.teacher_courses),
-    ##论坛模块（后期整合之后记得把view改成正确的对象）
-
-   path('forum/course/<int:course_id>/posts/', post.post_list, name='course_forum')
+    ##论坛模块
+    path('forum/', forum.forum_index, name='forum_index'),  # 论坛首页
+    path('forum/course/<int:course_id>/posts/', post.post_list, name='course_forum'),
+    path('forum/course/<int:course_id>/create/', forum.post_create, name='post_create'),
+    path('forum/create/', forum.post_create, name='post_create_no_course'),  # 无课程发帖
+    path('forum/post/<str:post_id>/', forum.post_detail, name='post_detail'),
+    path('forum/post/<str:post_id>/update/', forum.post_update, name='post_update'),
+    path('forum/post/<str:post_id>/delete/', forum.post_delete, name='post_delete'),
+    path('forum/post/<str:post_id>/like/', forum.post_like, name='post_like'),
+    path('forum/post/<str:post_id>/collect/', forum.post_collect, name='post_collect'),
+    path('forum/post/<str:post_id>/comment/', forum.comment_add, name='comment_add'),
+    path('forum/comment/<str:comment_id>/delete/', forum.comment_delete, name='comment_delete'),
+    path('forum/comment/<str:comment_id>/like/', forum.comment_like, name='comment_like'),
+    path('forum/my/posts/', forum.my_posts, name='my_posts'),  # 我的帖子
+    path('forum/my/collected/', forum.my_collected, name='my_collected'),  # 我的收藏
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

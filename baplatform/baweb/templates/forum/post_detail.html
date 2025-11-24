@@ -1,0 +1,594 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }} - 帖子详情</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+        
+        .detail-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+        
+        /* 帖子主体 */
+        .post-main {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .post-header {
+            padding: 30px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .post-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        
+        .post-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .post-meta-item {
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .post-meta-item i {
+            margin-right: 5px;
+        }
+        
+        .post-category {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .post-tag {
+            background: #f0f0f0;
+            color: #666;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-right: 8px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        
+        .post-content {
+            padding: 30px;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .post-actions {
+            padding: 20px 30px;
+            border-top: 1px solid #f0f0f0;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .action-buttons button {
+            background: white;
+            border: 2px solid #e8e8e8;
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .action-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .action-buttons button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .action-buttons button i {
+            margin-right: 5px;
+        }
+        
+        /* 评论区 */
+        .comments-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+        
+        .comments-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .comment-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .comment-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+        
+        .comment-item:hover {
+            background: #fafafa;
+        }
+        
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+        
+        .comment-author {
+            font-weight: 600;
+            color: #333;
+            margin-right: 10px;
+        }
+        
+        .comment-time {
+            color: #999;
+            font-size: 13px;
+        }
+        
+        .comment-content {
+            margin-top: 10px;
+            color: #555;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .comment-actions {
+            margin-top: 10px;
+        }
+        
+        .comment-actions button {
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            margin-right: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .comment-actions button:hover {
+            color: #667eea;
+        }
+        
+        .empty-comments {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-comments i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        /* 返回按钮 */
+        .back-button {
+            margin-bottom: 20px;
+        }
+        
+        .back-button a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button a:hover {
+            color: #5568d3;
+        }
+        
+        .back-button i {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    {% if user_id %}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            用户 <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/account/">个人信息</a></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li><a href="/login/">登录</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="detail-container">
+        <!-- 返回按钮 -->
+        <div class="back-button">
+            <a href="javascript:history.back();">
+                <i class="fa fa-arrow-left"></i> 返回论坛列表
+            </a>
+        </div>
+
+        <!-- 帖子主体 -->
+        <div class="post-main">
+            <div class="post-header">
+                <h1 class="post-title">{{ post.title }}</h1>
+                
+                <div class="post-meta">
+                    <div class="post-meta-item">
+                        <i class="fa fa-user"></i>
+                        {% if post.isAnonymous %}
+                        <span class="text-muted">匿名用户</span>
+                        {% else %}
+                        <strong>{{ post.author.username }}</strong>
+                        {% endif %}
+                    </div>
+                    <div class="post-meta-item">
+                        <i class="fa fa-clock-o"></i>
+                        {{ post.createdAt|date:"Y-m-d H:i" }}
+                    </div>
+                    <div class="post-meta-item">
+                        <i class="fa fa-eye"></i>
+                        {{ post.viewCount }} 次浏览
+                    </div>
+                    <div class="post-meta-item">
+                        <i class="fa fa-comment"></i>
+                        {{ post.commentCount }} 条评论
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    {% if post.category %}
+                    <span class="post-category">
+                        <i class="fa fa-tag"></i> {{ post.category.name }}
+                    </span>
+                    {% endif %}
+                    
+                    {% if tags_list %}
+                        {% for tag in tags_list %}
+                        <span class="post-tag">{{ tag }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="post-content">
+                {{ post.content }}
+            </div>
+            
+            <div class="post-actions">
+                <div class="action-buttons">
+                    <button class="btn-like {% if has_liked %}active{% endif %}" data-post-id="{{ post.postId }}">
+                        <i class="fa fa-thumbs-up"></i>
+                        点赞 <span class="like-count">{{ post.likeCount }}</span>
+                    </button>
+                    <button class="btn-collect {% if has_collected %}active{% endif %}" data-post-id="{{ post.postId }}">
+                        <i class="fa fa-star"></i>
+                        收藏 <span class="collect-count">{{ post.collectCount }}</span>
+                    </button>
+                </div>
+                
+                {% if user_id and post.author.id == user_id %}
+                <div>
+                    <button class="btn btn-sm btn-warning btn-edit" data-post-id="{{ post.postId }}">
+                        <i class="fa fa-edit"></i> 编辑
+                    </button>
+                    <button class="btn btn-sm btn-danger btn-delete" data-post-id="{{ post.postId }}">
+                        <i class="fa fa-trash"></i> 删除
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 评论区 -->
+        <div class="comments-section">
+            <h3 class="comments-header">
+                <i class="fa fa-comments"></i> 
+                全部评论 ({{ post.commentCount }})
+            </h3>
+            
+            <!-- 发表评论 -->
+            {% if user_id %}
+            <div class="comment-form">
+                <form id="commentForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <textarea class="form-control" name="content" rows="4" 
+                                  placeholder="请输入你的评论..." required></textarea>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="isAnonymous" value="true">
+                            <i class="fa fa-user-secret"></i> 匿名评论
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-paper-plane"></i> 发表评论
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i>
+                请 <a href="/login/">登录</a> 后发表评论
+            </div>
+            {% endif %}
+            
+            <!-- 评论列表 -->
+            <div class="comments-list">
+                {% for comment in comments %}
+                <div class="comment-item" data-comment-id="{{ comment.commentId }}">
+                    <div>
+                        <span class="comment-author">
+                            {% if comment.isAnonymous %}
+                            匿名用户
+                            {% else %}
+                            {{ comment.author.username }}
+                            {% endif %}
+                        </span>
+                        <span class="comment-time">{{ comment.createdAt|date:"Y-m-d H:i" }}</span>
+                    </div>
+                    <div class="comment-content">{{ comment.content }}</div>
+                    <div class="comment-actions">
+                        <button class="btn-comment-like" data-comment-id="{{ comment.commentId }}">
+                            <i class="fa fa-thumbs-up"></i>
+                            点赞 (<span class="comment-like-count">{{ comment.likeCount }}</span>)
+                        </button>
+                        {% if user_id and comment.author.id == user_id %}
+                        <button class="btn-comment-delete" data-comment-id="{{ comment.commentId }}">
+                            <i class="fa fa-trash"></i> 删除
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-comments">
+                    <i class="fa fa-comment-o"></i>
+                    <p>暂无评论，快来发表第一条评论吧！</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 分页 -->
+            {% if comments.paginator.num_pages > 1 %}
+            <nav aria-label="评论分页" style="margin-top: 30px;">
+                <ul class="pagination">
+                    {% if comments.has_previous %}
+                    <li>
+                        <a href="?page={{ comments.previous_page_number }}">上一页</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="active">
+                        <span>第 {{ comments.number }} / {{ comments.paginator.num_pages }} 页</span>
+                    </li>
+                    
+                    {% if comments.has_next %}
+                    <li>
+                        <a href="?page={{ comments.next_page_number }}">下一页</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 脚本 -->
+    <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+    <script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            // 点赞帖子
+            $('.btn-like').on('click', function() {
+                var postId = $(this).data('post-id');
+                var btn = $(this);
+                
+                $.ajax({
+                    url: '/forum/post/' + postId + '/like/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            btn.find('.like-count').text(res.like_count);
+                            if (res.action === 'like') {
+                                btn.addClass('active');
+                            } else {
+                                btn.removeClass('active');
+                            }
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+            
+            // 收藏帖子
+            $('.btn-collect').on('click', function() {
+                var postId = $(this).data('post-id');
+                var btn = $(this);
+                
+                $.ajax({
+                    url: '/forum/post/' + postId + '/collect/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            btn.find('.collect-count').text(res.collect_count);
+                            if (res.action === 'collect') {
+                                btn.addClass('active');
+                            } else {
+                                btn.removeClass('active');
+                            }
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+            
+            // 发表评论
+            $('#commentForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var content = $(this).find('[name="content"]').val().trim();
+                if (!content) {
+                    alert('请输入评论内容');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/forum/post/{{ post.postId }}/comment/',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            location.reload();
+                        } else {
+                            alert(res.msg || '评论失败');
+                        }
+                    }
+                });
+            });
+            
+            // 点赞评论
+            $('.btn-comment-like').on('click', function() {
+                var commentId = $(this).data('comment-id');
+                var btn = $(this);
+                
+                $.ajax({
+                    url: '/forum/comment/' + commentId + '/like/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            btn.find('.comment-like-count').text(res.like_count);
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+            
+            // 删除评论
+            $('.btn-comment-delete').on('click', function() {
+                if (!confirm('确定要删除这条评论吗？')) {
+                    return;
+                }
+                
+                var commentId = $(this).data('comment-id');
+                
+                $.ajax({
+                    url: '/forum/comment/' + commentId + '/delete/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            location.reload();
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+            
+            // 删除帖子
+            $('.btn-delete').on('click', function() {
+                if (!confirm('确定要删除这个帖子吗？此操作不可恢复！')) {
+                    return;
+                }
+                
+                var postId = $(this).data('post-id');
+                
+                $.ajax({
+                    url: '/forum/post/' + postId + '/delete/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            window.location.href = '/home/';
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,602 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的收藏 - BA平台</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .container-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* 面包屑 */
+        .breadcrumb-nav {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .breadcrumb {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+        
+        .breadcrumb a {
+            color: #3182ce;
+        }
+        
+        /* 页面头部 */
+        .page-header-custom {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        .page-title i {
+            color: #f59e0b;
+            margin-right: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-custom {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .btn-secondary-custom {
+            background: white;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .btn-secondary-custom:hover {
+            border-color: #3182ce;
+            color: #3182ce;
+            text-decoration: none;
+        }
+        
+        /* 统计卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #d97706;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #78350f;
+            font-size: 14px;
+        }
+        
+        /* 工具栏 */
+        .toolbar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        
+        .search-box button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #3182ce;
+            cursor: pointer;
+            padding: 8px 12px;
+        }
+        
+        /* 帖子列表 */
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .post-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        
+        .collect-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-right: 120px;
+        }
+        
+        .post-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        
+        .post-title:hover {
+            color: #3182ce;
+        }
+        
+        .course-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+            color: white;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .no-course-badge {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        }
+        
+        .post-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #718096;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .post-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .post-category {
+            padding: 4px 10px;
+            background: #fef5e7;
+            color: #d97706;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .post-content-preview {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 15px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .post-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .post-tag {
+            padding: 4px 10px;
+            background: #edf2f7;
+            color: #4a5568;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        
+        .post-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+        }
+        
+        .post-stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .stat-box i {
+            color: #a0aec0;
+        }
+        
+        .stat-box.highlight {
+            color: #3182ce;
+            font-weight: 600;
+        }
+        
+        .stat-box.highlight i {
+            color: #3182ce;
+        }
+        
+        .collect-time {
+            font-size: 13px;
+            color: #a0aec0;
+        }
+        
+        /* 分页 */
+        .pagination-wrapper {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .pagination {
+            margin: 0;
+        }
+        
+        .pagination > li > a,
+        .pagination > li > span {
+            color: #3182ce;
+            border-color: #e2e8f0;
+            padding: 10px 16px;
+        }
+        
+        .pagination > .active > a,
+        .pagination > .active > span {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+            border-color: transparent;
+        }
+        
+        .pagination > li > a:hover {
+            background: #ebf8ff;
+            border-color: #3182ce;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            background: white;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #fbbf24;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #718096;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .post-header {
+                padding-right: 0;
+            }
+            
+            .collect-badge {
+                position: static;
+                display: inline-flex;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- 面包屑导航 -->
+        <nav class="breadcrumb-nav">
+            <ol class="breadcrumb">
+                <li><a href="/home/"><i class="fa fa-home"></i> 首页</a></li>
+                <li><a href="{% url 'forum_index' %}"><i class="fa fa-comments"></i> 论坛</a></li>
+                <li class="active"><i class="fa fa-star"></i> 我的收藏</li>
+            </ol>
+        </nav>
+        
+        <!-- 页面头部 -->
+        <div class="page-header-custom">
+            <div class="header-content">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fa fa-star"></i>
+                        我的收藏
+                    </h1>
+                    <p style="color: #718096; margin-top: 10px; margin-bottom: 0;">查看你收藏的所有精彩帖子</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'my_posts' %}" class="btn-custom btn-secondary-custom">
+                        <i class="fa fa-file-text"></i> 我的帖子
+                    </a>
+                    <a href="{% url 'forum_index' %}" class="btn-custom btn-primary-custom">
+                        <i class="fa fa-comments"></i> 浏览论坛
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 统计卡片 -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_collected }}</div>
+                    <div class="stat-label">总收藏数</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="search-box">
+                <form method="get" action="{% url 'my_collected' %}">
+                    <input type="text" 
+                           name="keyword" 
+                           placeholder="搜索收藏的帖子..." 
+                           value="{{ keyword }}">
+                    <button type="submit">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 帖子列表 -->
+        {% if collects %}
+        <div class="posts-list">
+            {% for collect in collects %}
+            <div class="post-card">
+                <div class="collect-badge">
+                    <i class="fa fa-star"></i>
+                    <span>已收藏</span>
+                </div>
+                
+                <div class="post-header">
+                    <div style="flex: 1;">
+                        <div class="post-title" onclick="window.location.href='{% url 'post_detail' collect.post.postId %}'">
+                            {{ collect.post.title }}
+                            {% if collect.post.course %}
+                            <span class="course-badge">{{ collect.post.course.name }}</span>
+                            {% else %}
+                            <span class="course-badge no-course-badge">公共讨论</span>
+                            {% endif %}
+                        </div>
+                        <div class="post-meta">
+                            <div class="post-meta-item">
+                                <i class="fa fa-user"></i>
+                                {% if collect.post.isAnonymous %}
+                                <span>匿名用户</span>
+                                {% else %}
+                                <span>{{ collect.post.author.username }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="post-meta-item">
+                                <i class="fa fa-clock-o"></i>
+                                <span>发布于 {{ collect.post.createdAt|date:"Y-m-d" }}</span>
+                            </div>
+                            {% if collect.post.category %}
+                            <span class="post-category">
+                                <i class="fa fa-tag"></i> {{ collect.post.category.name }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="post-content-preview">
+                    {{ collect.post.content|striptags|truncatewords:30 }}
+                </div>
+                
+                {% if collect.post.tags_list %}
+                <div class="post-tags">
+                    {% for tag in collect.post.tags_list %}
+                    <span class="post-tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="post-footer">
+                    <div class="post-stats">
+                        <div class="stat-box {% if collect.post.viewCount > 100 %}highlight{% endif %}">
+                            <i class="fa fa-eye"></i>
+                            <span>{{ collect.post.viewCount }}</span>
+                        </div>
+                        <div class="stat-box {% if collect.post.likeCount > 0 %}highlight{% endif %}">
+                            <i class="fa fa-heart"></i>
+                            <span>{{ collect.post.likeCount }}</span>
+                        </div>
+                        <div class="stat-box {% if collect.post.commentCount > 0 %}highlight{% endif %}">
+                            <i class="fa fa-comment"></i>
+                            <span>{{ collect.post.commentCount }}</span>
+                        </div>
+                    </div>
+                    <div class="collect-time">
+                        收藏于 {{ collect.createdAt|date:"Y-m-d H:i" }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 分页 -->
+        {% if collects.has_other_pages %}
+        <div class="pagination-wrapper">
+            <ul class="pagination">
+                {% if collects.has_previous %}
+                <li>
+                    <a href="?page={{ collects.previous_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in collects.paginator.page_range %}
+                <li class="{% if collects.number == num %}active{% endif %}">
+                    <a href="?page={{ num }}{% if keyword %}&keyword={{ keyword }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endfor %}
+                
+                {% if collects.has_next %}
+                <li>
+                    <a href="?page={{ collects.next_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- 空状态 -->
+        <div class="empty-state">
+            <i class="fa fa-star-o"></i>
+            <h3>还没有收藏帖子</h3>
+            <p>浏览论坛，收藏你感兴趣的帖子吧！</p>
+            <a href="{% url 'forum_index' %}" class="btn-custom btn-primary-custom" style="margin-top: 20px;">
+                <i class="fa fa-comments"></i> 浏览论坛
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>

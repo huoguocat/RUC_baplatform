@@ -436,13 +436,6 @@
 
     <!-- 主内容 -->
     <div class="container">
-        <!-- 面包屑导航 -->
-        <ol class="breadcrumb" style="background: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;">
-            <li><a href="/home/"><i class="fa fa-home"></i> 首页</a></li>
-            <li><a href="{% url 'forum_index' %}"><i class="fa fa-comments"></i> 论坛</a></li>
-            <li class="active"><i class="fa fa-book"></i> {{ course.name }}</li>
-        </ol>
-        
         <!-- 页面标题 -->
         <div class="page-header">
             <h1>
@@ -460,18 +453,16 @@
                         <i class="fa fa-bars" aria-hidden="true"></i> 论坛导航
                     </div>
                     <ul class="list-group">
-                        <li class="list-group-item">
-                            <a href="{% url 'forum_index' %}">
-                                <i class="fa fa-globe" aria-hidden="true"></i> 全部论坛
-                            </a>
-                        </li>
-                        
                         <li class="list-group-item {% if not has_bounty and not sort_by %}active{% endif %}">
                             <a href="/forum/course/{{ course.id }}/posts/">
-                                <i class="fa fa-home" aria-hidden="true"></i> 本课程论坛
+                                <i class="fa fa-home" aria-hidden="true"></i> 论坛首页
                             </a>
                         </li>
-
+                        <li class="list-group-item {% if has_bounty %}active{% endif %}">
+                            <a href="?has_bounty=1{% if keyword %}&keyword={{ keyword }}{% endif %}">
+                                <i class="fa fa-trophy" aria-hidden="true"></i> 仅看有悬赏
+                            </a>
+                        </li>
                         <li class="list-group-item {% if sort_by == 'heat' %}active{% endif %}">
                             <a href="?sort_by=heat{% if keyword %}&keyword={{ keyword }}{% endif %}">
                                 <i class="fa fa-fire" aria-hidden="true"></i> 按热度排行
@@ -517,12 +508,16 @@
                     </div>
                     <div class="panel-body">
                         <form action="/forum/course/{{ course.id }}/create/" method="get">
-                            <p class="text-muted" style="margin-bottom: 15px;">
-                                <i class="fa fa-info-circle" aria-hidden="true"></i>
-                                在论坛中发布问题、讨论话题或分享经验
-                            </p>
+                            <div class="form-group">
+                                <label for="bounty">
+                                    <i class="fa fa-gift" aria-hidden="true"></i> 悬赏积分（可选）
+                                </label>
+                                <input type="number" class="form-control" id="bounty" name="bounty"
+                                       placeholder="设置悬赏积分吸引更多回复" min="0" value="0">
+                                <small class="text-muted">设置悬赏积分可以吸引更多同学回复您的问题</small>
+                            </div>
                             <button type="submit" class="btn btn-block btn-success">
-                                <i class="fa fa-paper-plane" aria-hidden="true"></i> 发布新帖子
+                                <i class="fa fa-paper-plane" aria-hidden="true"></i> 发布帖子
                             </button>
                         </form>
                     </div>
@@ -542,14 +537,18 @@
                         {% for post in posts %}
                         <a href="/forum/post/{{ post.postId }}/" class="post-item">
                             <div class="row">
+                                <!-- 悬赏金额 -->
+                                <div class="col-md-2">
+                                    {% if post.bounty > 0 %}
+                                    <span class="bounty-badge">
+                                        <i class="fa fa-trophy" aria-hidden="true"></i> {{ post.bounty }} 分
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
                                 <!-- 帖子标题和作者信息 -->
-                                <div class="col-md-9">
-                                    <h5 class="post-title">
-                                        {% if post.category %}
-                                        <span class="label label-info" style="font-size: 11px; margin-right: 8px;">{{ post.category.name }}</span>
-                                        {% endif %}
-                                        {{ post.title }}
-                                    </h5>
+                                <div class="col-md-7">
+                                    <h5 class="post-title">{{ post.title }}</h5>
                                     <p class="post-meta">
                                         <i class="fa fa-user" aria-hidden="true"></i>
                                         {% if post.isAnonymous %}
@@ -624,16 +623,19 @@
                         <i class="fa fa-user-circle" aria-hidden="true"></i> 个人中心
                     </div>
                     <div class="panel-body">
-                        {% load static %}
-                        <img src="{% static 'img/user_pic.png' %}" 
+                        <img src="{{ user.avatar.url|default:'/static/img/default_avatar.png' }}" 
                              class="user-avatar" alt="个人头像">
                         
                         <h4>{{ user.username|default:"游客" }}</h4>
                         
                         <ul class="list-group">
                             <li class="list-group-item">
-                                <i class="fa fa-fire" aria-hidden="true"></i> 论坛活跃度
+                                <i class="fa fa-bar-chart" aria-hidden="true"></i> 论坛排行
                                 <span class="badge pull-right">{{ user_rank|default:"--" }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fa fa-gift" aria-hidden="true"></i> 悬赏积分
+                                <span class="badge pull-right">{{ user.bounty_points|default:0 }}</span>
                             </li>
                             <li class="list-group-item">
                                 <a href="/forum/my/collected/">

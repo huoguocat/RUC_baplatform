@@ -1,0 +1,288 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布新帖 - {{ course.name }}</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+        
+        .create-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 0 15px;
+        }
+        
+        .create-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .create-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+        }
+        
+        .create-header h2 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .create-header .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 10px 0 0 0;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .create-header .breadcrumb a {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        .create-body {
+            padding: 30px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .form-control {
+            border-radius: 6px;
+            border: 2px solid #e8e8e8;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 40px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            padding: 12px 40px;
+            font-weight: 600;
+            border-radius: 6px;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .help-text {
+            font-size: 13px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .checkbox-inline {
+            padding-left: 25px;
+        }
+        
+        .checkbox-inline input[type="checkbox"] {
+            margin-left: -25px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            {{ user.username }} <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/account/">个人信息</a></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="create-container">
+        <div class="create-panel">
+            <div class="create-header">
+                <h2><i class="fa fa-pencil-square-o"></i> 发布新帖</h2>
+                <div class="breadcrumb">
+                    {% if course %}
+                    <a href="/course/{{ course.id }}/course_page">{{ course.name }}</a> /
+                    <a href="/forum/course/{{ course.id }}/posts/">论坛</a> /
+                    {% endif %}
+                    <span>发布新帖</span>
+                </div>
+            </div>
+            
+            <div class="create-body">
+                <form method="post" id="postForm">
+                    {% csrf_token %}
+                    
+                    <!-- 标题 -->
+                    <div class="form-group">
+                        <label for="id_title">
+                            <i class="fa fa-file-text-o"></i> 帖子标题 <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        <p class="help-text">请输入清晰明确的标题，便于其他同学理解</p>
+                    </div>
+                    
+                    <!-- 分类 -->
+                    <div class="form-group">
+                        <label for="id_category">
+                            <i class="fa fa-tag"></i> 内容分类
+                        </label>
+                        {{ form.category }}
+                        <p class="help-text">选择合适的分类，方便他人查找</p>
+                    </div>
+                    
+                    <!-- 标签 -->
+                    <div class="form-group">
+                        <label for="id_tags">
+                            <i class="fa fa-tags"></i> 标签
+                        </label>
+                        {{ form.tags }}
+                        <p class="help-text">多个标签用逗号分隔，如：Python, Django, 数据库</p>
+                    </div>
+                    
+                    <!-- 内容 -->
+                    <div class="form-group">
+                        <label for="id_content">
+                            <i class="fa fa-align-left"></i> 帖子内容 <span class="text-danger">*</span>
+                        </label>
+                        {{ form.content }}
+                        <p class="help-text">详细描述你的问题或想法，支持换行</p>
+                    </div>
+                    
+                    <!-- 匿名选项 -->
+                    <div class="form-group">
+                        <label class="checkbox-inline">
+                            {{ form.isAnonymous }}
+                            <i class="fa fa-user-secret"></i> 匿名发布
+                        </label>
+                        <p class="help-text">勾选后，其他人将看不到你的用户名</p>
+                    </div>
+                    
+                    <!-- 错误提示 -->
+                    <div class="alert alert-danger" id="errorMsg" style="display: none;">
+                        <i class="fa fa-exclamation-circle"></i>
+                        <span id="errorText"></span>
+                    </div>
+                    
+                    <!-- 提交按钮 -->
+                    <div class="form-group" style="margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary btn-submit">
+                            <i class="fa fa-paper-plane"></i> 发布帖子
+                        </button>
+                        <a href="javascript:history.back();" class="btn btn-cancel">
+                            <i class="fa fa-times"></i> 取消
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本 -->
+    <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+    <script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $('#postForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // 基本验证
+                var title = $('#id_title').val().trim();
+                var content = $('#id_content').val().trim();
+                
+                if (!title) {
+                    showError('请输入帖子标题');
+                    return;
+                }
+                
+                if (!content) {
+                    showError('请输入帖子内容');
+                    return;
+                }
+                
+                // 提交表单
+                $.ajax({
+                    url: '',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            // 跳转到帖子详情页
+                            window.location.href = '/forum/post/' + res.postId + '/';
+                        } else {
+                            if (res.errors) {
+                                var errorMsg = '';
+                                $.each(res.errors, function(field, errors) {
+                                    errorMsg += errors.join(', ') + ' ';
+                                });
+                                showError(errorMsg);
+                            } else {
+                                showError(res.msg || '发布失败，请重试');
+                            }
+                        }
+                    },
+                    error: function() {
+                        showError('网络错误，请稍后重试');
+                    }
+                });
+            });
+            
+            function showError(msg) {
+                $('#errorText').text(msg);
+                $('#errorMsg').fadeIn();
+                setTimeout(function() {
+                    $('#errorMsg').fadeOut();
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>
