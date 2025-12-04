@@ -12,9 +12,22 @@ class PostCreateForm(BootStrapModelForm):
         widget=forms.TextInput(attrs={'placeholder': '多个标签用逗号分隔，如: Python,Django,Web开发'})
     )
     
+    bountyPoints = forms.IntegerField(
+        label='悬赏积分',
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={
+            'placeholder': '0表示不悬赏',
+            'min': 0,
+            'style': 'width: 150px;'
+        }),
+        help_text='设置悬赏积分可以吸引更多回答（从您的积分中扣除）'
+    )
+    
     class Meta:
         model = models.Post
-        fields = ['title', 'content', 'category', 'tags', 'isAnonymous']
+        fields = ['title', 'content', 'category', 'tags', 'isAnonymous', 'bountyPoints']
         widgets = {
             'title': forms.TextInput(attrs={'placeholder': '请输入帖子标题...', 'maxlength': 256}),
             'content': forms.Textarea(attrs={'placeholder': '请输入帖子内容...', 'rows': 8}),

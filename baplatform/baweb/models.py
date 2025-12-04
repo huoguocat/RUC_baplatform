@@ -12,6 +12,8 @@ class User(models.Model):
         (3, "管理员"),
     )
     type = models.SmallIntegerField(verbose_name='用户类型', choices=type_choices)
+    # 积分系统
+    points = models.IntegerField(verbose_name='积分', default=100, help_text='用户积分，初始100分')
 
 class StudentInfo(models.Model):
     '''学生信息表'''
@@ -192,7 +194,7 @@ class Post(models.Model):
     # 基本属性
     postId = models.CharField(verbose_name='帖子ID', max_length=64, unique=True, db_index=True)
     author = models.ForeignKey(User, verbose_name='作者', on_delete=models.CASCADE, related_name='user_posts')
-    course = models.ForeignKey(Course, verbose_name='所属课程', on_delete=models.CASCADE, related_name='course_posts')
+    course = models.ForeignKey(Course, verbose_name='所属课程', on_delete=models.CASCADE, related_name='course_posts', null=True, blank=True, help_text='可以为空，表示不属于任何课程的帖子')
     
     # 内容属性
     title = models.CharField(verbose_name='标题', max_length=256)
@@ -219,6 +221,12 @@ class Post(models.Model):
     # AI向量嵌入（可选，用于向量搜索和推荐）
     embedding = models.BinaryField(verbose_name='内容嵌入向量', null=True, blank=True, 
                                    help_text='768维向量，用于智能推荐和语义搜索')
+    
+    # 积分系统
+    bountyPoints = models.IntegerField(verbose_name='悬赏积分', default=0, help_text='帖子悬赏的积分数量')
+    bestAnswer = models.ForeignKey('PostComment', verbose_name='最佳答案', on_delete=models.SET_NULL, 
+                                   null=True, blank=True, related_name='best_answer_posts',
+                                   help_text='被选为最佳答案的评论')
 
     class Meta:
         ordering = ['-heatScore', '-createdAt']
@@ -300,18 +308,82 @@ class Post(models.Model):
         self.save()
         return True
 
-    def setBounty(self, bounty_points):
+    def setBounty(self, bounty_points, author, deduct_points=True):
         '''设置悬赏分数（积分系统集成）
         
         Args:
             bounty_points (int): 悬赏积分
+            author (User): 帖子作者
+            deduct_points (bool): 是否扣除积分，默认True。如果已经在外部扣除，设为False
         
         Returns:
             bool: 设置是否成功
         '''
-        # 预留接口用于积分系统集成
-        # TODO: 与 IntegralService 集成
-        pass
+        if bounty_points <= 0:
+            return False
+        
+        # 如果需要扣除积分，检查并扣除
+        if deduct_points:
+            # 重新从数据库获取用户对象，确保积分是最新的
+            author.refresh_from_db()
+            
+            # 检查作者积分是否足够
+            if author.points < bounty_points:
+                return False
+            
+            # 扣除作者积分
+            author.points -= bounty_points
+            author.save(update_fields=['points'])
+        
+        # 设置帖子悬赏积分
+        self.bountyPoints = bounty_points
+        self.save(update_fields=['bountyPoints'])
+        
+        return True
+    
+    def selectBestAnswer(self, comment, author):
+        '''选择最佳答案并分配积分
+        
+        Args:
+            comment (PostComment): 被选为最佳答案的评论
+            author (User): 帖子作者（用于验证权限）
+        
+        Returns:
+            bool: 是否成功
+        '''
+        # 验证权限：只有帖子作者可以选择最佳答案
+        if self.author != author:
+            return False
+        
+        # 验证评论是否属于该帖子
+        if comment.post != self:
+            return False
+        
+        # 如果已经有最佳答案，不能重复选择
+        if self.bestAnswer:
+            return False
+        
+        # 如果帖子没有悬赏积分，不能选择最佳答案
+        if self.bountyPoints <= 0:
+            return False
+        
+        # 设置最佳答案
+        self.bestAnswer = comment
+        comment.isBestAnswer = True
+        comment.save()
+        self.save()
+        
+        # 分配积分给最佳答案的作者
+        # 积分分配策略：最佳答案作者获得全部悬赏积分
+        answer_author = comment.author
+        answer_author.points += self.bountyPoints
+        answer_author.save()
+        
+        # 清空悬赏积分（已分配）
+        self.bountyPoints = 0
+        self.save()
+        
+        return True
 
 
 class PostLike(models.Model):
@@ -359,6 +431,10 @@ class PostComment(models.Model):
     updatedAt = models.DateTimeField(verbose_name='更新时间', auto_now=True)
     
     likeCount = models.IntegerField(verbose_name='点赞数', default=0)
+    
+    # 积分系统
+    isBestAnswer = models.BooleanField(verbose_name='是否是最佳答案', default=False, 
+                                       help_text='是否被选为该帖子的最佳答案')
 
     class Meta:
         ordering = ['-createdAt']

@@ -186,6 +186,15 @@
                         <p class="help-text">多个标签用逗号分隔，如：Python, Django, 数据库</p>
                     </div>
                     
+                    <!-- 悬赏积分 -->
+                    <div class="form-group">
+                        <label for="id_bountyPoints">
+                            <i class="fa fa-gift"></i> 悬赏积分
+                        </label>
+                        {{ form.bountyPoints }}
+                        <p class="help-text">{{ form.bountyPoints.help_text }}</p>
+                    </div>
+                    
                     <!-- 内容 -->
                     <div class="form-group">
                         <label for="id_content">
@@ -269,8 +278,35 @@
                             }
                         }
                     },
-                    error: function() {
-                        showError('网络错误，请稍后重试');
+                    error: function(xhr, status, error) {
+                        // 改进错误处理，显示更详细的错误信息
+                        var errorMsg = '网络错误，请稍后重试';
+                        if (xhr.responseJSON && xhr.responseJSON.msg) {
+                            errorMsg = xhr.responseJSON.msg;
+                        } else if (xhr.responseText) {
+                            try {
+                                var jsonResponse = JSON.parse(xhr.responseText);
+                                if (jsonResponse.msg) {
+                                    errorMsg = jsonResponse.msg;
+                                } else if (jsonResponse.errors) {
+                                    var errorText = '';
+                                    $.each(jsonResponse.errors, function(field, errors) {
+                                        errorText += errors.join(', ') + ' ';
+                                    });
+                                    errorMsg = errorText || errorMsg;
+                                }
+                            } catch(e) {
+                                // 如果不是JSON，可能是HTML错误页面
+                                if (xhr.status === 403) {
+                                    errorMsg = '没有权限，请检查登录状态';
+                                } else if (xhr.status === 500) {
+                                    errorMsg = '服务器错误，请稍后重试';
+                                } else if (xhr.status === 404) {
+                                    errorMsg = '页面不存在，请刷新后重试';
+                                }
+                            }
+                        }
+                        showError(errorMsg);
                     }
                 });
             });

@@ -518,9 +518,20 @@
                     </h1>
                     <p style="color: #718096; margin-top: 10px; margin-bottom: 0;">汇聚各课程讨论，分享知识与见解</p>
                 </div>
-                <a href="/home/" class="btn" style="background: white; border: 2px solid #e2e8f0; color: #4a5568; padding: 10px 20px; border-radius: 8px; text-decoration: none; transition: all 0.2s;">
-                    <i class="fa fa-arrow-left"></i> 返回首页
-                </a>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    {% if current_user %}
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa fa-star"></i>
+                        <span style="font-weight: 600;">我的积分: {{ current_user.points }}</span>
+                    </div>
+                    <a href="/forum/points/ranking/" class="btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; text-decoration: none; transition: all 0.2s; font-weight: 500;">
+                        <i class="fa fa-trophy"></i> 积分排行榜
+                    </a>
+                    {% endif %}
+                    <a href="/home/" class="btn" style="background: white; border: 2px solid #e2e8f0; color: #4a5568; padding: 10px 20px; border-radius: 8px; text-decoration: none; transition: all 0.2s;">
+                        <i class="fa fa-arrow-left"></i> 返回首页
+                    </a>
+                </div>
             </div>
             
             <div class="forum-stats">
@@ -600,6 +611,24 @@
                     </ul>
                 </div>
                 
+                <!-- 悬赏积分筛选 -->
+                <div class="sidebar-card">
+                    <div class="sidebar-title">
+                        <i class="fa fa-gift"></i>
+                        悬赏筛选
+                    </div>
+                    <ul class="filter-list">
+                        <li class="filter-item {% if not has_bounty %}active{% endif %}" 
+                            onclick="filterByBounty('')">
+                            <span>全部帖子</span>
+                        </li>
+                        <li class="filter-item {% if has_bounty == '1' %}active{% endif %}" 
+                            onclick="filterByBounty('1')">
+                            <span><i class="fa fa-gift" style="color: #f5576c;"></i> 有悬赏积分</span>
+                        </li>
+                    </ul>
+                </div>
+                
                 <!-- 分类筛选 -->
                 <div class="sidebar-card">
                     <div class="sidebar-title">
@@ -646,6 +675,10 @@
                                 onclick="sortBy('newest')">
                             <i class="fa fa-clock-o"></i> 最新
                         </button>
+                        <button class="sort-btn {% if sort_by == 'bounty' %}active{% endif %}" 
+                                onclick="sortBy('bounty')">
+                            <i class="fa fa-gift"></i> 悬赏
+                        </button>
                     </div>
                 </div>
                 
@@ -680,6 +713,16 @@
                                     {% if post.category %}
                                     <span class="post-category">
                                         <i class="fa fa-tag"></i> {{ post.category.name }}
+                                    </span>
+                                    {% endif %}
+                                    {% if post.bountyPoints > 0 %}
+                                    <span class="post-category" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                        <i class="fa fa-gift"></i> 悬赏 {{ post.bountyPoints }} 积分
+                                    </span>
+                                    {% endif %}
+                                    {% if post.bestAnswer %}
+                                    <span class="post-category" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                        <i class="fa fa-check-circle"></i> 已解决
                                     </span>
                                     {% endif %}
                                 </div>
@@ -787,6 +830,18 @@
                 url.searchParams.set('category_id', categoryId);
             } else {
                 url.searchParams.delete('category_id');
+            }
+            url.searchParams.delete('page');  // 重置页码
+            window.location.href = url.toString();
+        }
+        
+        // 悬赏筛选
+        function filterByBounty(hasBounty) {
+            const url = new URL(window.location.href);
+            if (hasBounty) {
+                url.searchParams.set('has_bounty', hasBounty);
+            } else {
+                url.searchParams.delete('has_bounty');
             }
             url.searchParams.delete('page');  // 重置页码
             window.location.href = url.toString();

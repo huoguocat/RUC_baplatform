@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分排行榜</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+        
+        .ranking-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+        
+        .ranking-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .ranking-header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        
+        .ranking-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .ranking-table table {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .ranking-table thead {
+            background: #f8f9fa;
+        }
+        
+        .ranking-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        
+        .ranking-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .ranking-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .rank-badge {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .rank-1 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .rank-2 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .rank-3 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        .rank-other {
+            background: #e8e8e8;
+            color: #666;
+        }
+        
+        .points-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        
+        .current-user-row {
+            background: #fff3cd !important;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .back-button {
+            margin-bottom: 20px;
+        }
+        
+        .back-button a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-button a:hover {
+            color: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="logo" href="/home/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    {% if user_id %}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            用户 <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/account/">个人信息</a></li>
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li><a href="/login/">登录</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="ranking-container">
+        <div class="back-button">
+            <a href="javascript:history.back();">
+                <i class="fa fa-arrow-left"></i> 返回
+            </a>
+        </div>
+        
+        <div class="ranking-header">
+            <h1><i class="fa fa-trophy"></i> 积分排行榜</h1>
+            {% if current_user_rank %}
+            <p style="margin-top: 15px; font-size: 16px;">
+                您的排名：<strong>第 {{ current_user_rank.rank }} 名</strong> | 
+                您的积分：<strong>{{ current_user_rank.user.points }}</strong>
+            </p>
+            {% endif %}
+        </div>
+        
+        <div class="ranking-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">排名</th>
+                        <th>用户名</th>
+                        <th style="width: 150px; text-align: right;">积分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr {% if current_user_rank and user.id == current_user_rank.user.id %}class="current-user-row"{% endif %}>
+                        <td>
+                            {% if forloop.counter == 1 %}
+                            <span class="rank-badge rank-1">{{ forloop.counter }}</span>
+                            {% elif forloop.counter == 2 %}
+                            <span class="rank-badge rank-2">{{ forloop.counter }}</span>
+                            {% elif forloop.counter == 3 %}
+                            <span class="rank-badge rank-3">{{ forloop.counter }}</span>
+                            {% else %}
+                            <span class="rank-badge rank-other">{{ forloop.counter }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ user.username }}</strong>
+                            {% if current_user_rank and user.id == current_user_rank.user.id %}
+                            <span style="color: #ffc107; margin-left: 10px;">(您)</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <span class="points-value">{{ user.points }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px; color: #999;">
+                            暂无数据
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+

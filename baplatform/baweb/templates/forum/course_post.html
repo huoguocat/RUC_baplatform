@@ -444,12 +444,23 @@
         </ol>
         
         <!-- 页面标题 -->
-        <div class="page-header">
-            <h1>
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <h1 style="margin: 0;">
                 <i class="fa fa-comments" aria-hidden="true"></i> 
                 {{ course.name }} 
                 <small>课程论坛</small>
             </h1>
+            {% if current_user %}
+            <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa fa-star"></i>
+                    <span style="font-weight: 600;">我的积分: {{ current_user.points }}</span>
+                </div>
+                <a href="/forum/points/ranking/" class="btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; text-decoration: none; transition: all 0.2s; font-weight: 500;">
+                    <i class="fa fa-trophy"></i> 积分排行榜
+                </a>
+            </div>
+            {% endif %}
         </div>
 
         <div class="row">

@@ -299,6 +299,18 @@
                     </span>
                     {% endif %}
                     
+                    {% if post.bountyPoints > 0 %}
+                    <span class="post-category" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fa fa-gift"></i> 悬赏 {{ post.bountyPoints }} 积分
+                    </span>
+                    {% endif %}
+                    
+                    {% if post.bestAnswer %}
+                    <span class="post-category" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fa fa-check-circle"></i> 已有最佳答案
+                    </span>
+                    {% endif %}
+                    
                     {% if tags_list %}
                         {% for tag in tags_list %}
                         <span class="post-tag">{{ tag }}</span>
@@ -373,7 +385,7 @@
             <!-- 评论列表 -->
             <div class="comments-list">
                 {% for comment in comments %}
-                <div class="comment-item" data-comment-id="{{ comment.commentId }}">
+                <div class="comment-item {% if comment.isBestAnswer %}best-answer{% endif %}" data-comment-id="{{ comment.commentId }}" {% if comment.isBestAnswer %}style="border: 2px solid #4facfe; background: #e8f4f8; border-radius: 5px; padding: 15px;"{% endif %}>
                     <div>
                         <span class="comment-author">
                             {% if comment.isAnonymous %}
@@ -382,6 +394,11 @@
                             {{ comment.author.username }}
                             {% endif %}
                         </span>
+                        {% if comment.isBestAnswer %}
+                        <span style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 10px;">
+                            <i class="fa fa-check-circle"></i> 最佳答案
+                        </span>
+                        {% endif %}
                         <span class="comment-time">{{ comment.createdAt|date:"Y-m-d H:i" }}</span>
                     </div>
                     <div class="comment-content">{{ comment.content }}</div>
@@ -390,12 +407,90 @@
                             <i class="fa fa-thumbs-up"></i>
                             点赞 (<span class="comment-like-count">{{ comment.likeCount }}</span>)
                         </button>
+                        {% if user_id %}
+                        <button class="btn-comment-reply" data-comment-id="{{ comment.commentId }}" data-author-name="{% if comment.isAnonymous %}匿名用户{% else %}{{ comment.author.username }}{% endif %}">
+                            <i class="fa fa-reply"></i> 回复
+                        </button>
+                        {% endif %}
+                        {% if can_select_best_answer and not comment.isBestAnswer and not comment.parentComment %}
+                        <button class="btn-select-best-answer" data-post-id="{{ post.postId }}" data-comment-id="{{ comment.commentId }}" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 6px 15px; border-radius: 15px; cursor: pointer; font-weight: 500;">
+                            <i class="fa fa-thumbs-up"></i> 有帮助
+                        </button>
+                        {% endif %}
                         {% if user_id and comment.author.id == user_id %}
                         <button class="btn-comment-delete" data-comment-id="{{ comment.commentId }}">
                             <i class="fa fa-trash"></i> 删除
                         </button>
                         {% endif %}
                     </div>
+                    
+                    <!-- 回复列表 -->
+                    {% if comment.replies.all %}
+                    <div class="replies-list" style="margin-top: 15px; margin-left: 30px; padding-left: 15px; border-left: 3px solid #e8e8e8;">
+                        {% for reply in comment.replies.all %}
+                        <div class="comment-item reply-item" data-comment-id="{{ reply.commentId }}" style="padding: 15px; margin-bottom: 10px; background: #f8f9fa; border-radius: 5px;">
+                            <div>
+                                <span class="comment-author">
+                                    {% if reply.isAnonymous %}
+                                    匿名用户
+                                    {% else %}
+                                    {{ reply.author.username }}
+                                    {% endif %}
+                                </span>
+                                <span style="color: #999; margin: 0 5px;">回复</span>
+                                <span class="comment-author">
+                                    {% if comment.isAnonymous %}
+                                    匿名用户
+                                    {% else %}
+                                    {{ comment.author.username }}
+                                    {% endif %}
+                                </span>
+                                <span class="comment-time">{{ reply.createdAt|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            <div class="comment-content" style="margin-top: 8px;">{{ reply.content }}</div>
+                            <div class="comment-actions" style="margin-top: 8px;">
+                                <button class="btn-comment-like" data-comment-id="{{ reply.commentId }}">
+                                    <i class="fa fa-thumbs-up"></i>
+                                    点赞 (<span class="comment-like-count">{{ reply.likeCount }}</span>)
+                                </button>
+                                {% if user_id %}
+                                <button class="btn-comment-reply" data-comment-id="{{ reply.commentId }}" data-author-name="{% if reply.isAnonymous %}匿名用户{% else %}{{ reply.author.username }}{% endif %}">
+                                    <i class="fa fa-reply"></i> 回复
+                                </button>
+                                {% endif %}
+                                {% if user_id and reply.author.id == user_id %}
+                                <button class="btn-comment-delete" data-comment-id="{{ reply.commentId }}">
+                                    <i class="fa fa-trash"></i> 删除
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 回复表单（隐藏） -->
+                    {% if user_id %}
+                    <div class="reply-form" data-comment-id="{{ comment.commentId }}" style="display: none; margin-top: 15px; margin-left: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <form class="reply-comment-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label>回复 <span class="reply-to-author"></span>：</label>
+                                <textarea class="form-control" name="content" rows="3" placeholder="请输入回复内容..." required></textarea>
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="isAnonymous" value="true">
+                                    <i class="fa fa-user-secret"></i> 匿名回复
+                                </label>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-sm btn-primary">发表回复</button>
+                                <button type="button" class="btn btn-sm btn-default cancel-reply">取消</button>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
                 </div>
                 {% empty %}
                 <div class="empty-comments">
@@ -537,6 +632,54 @@
                 });
             });
             
+            // 回复评论
+            $('.btn-comment-reply').on('click', function() {
+                var commentId = $(this).data('comment-id');
+                var authorName = $(this).data('author-name');
+                var replyForm = $('.reply-form[data-comment-id="' + commentId + '"]');
+                
+                // 隐藏其他回复表单
+                $('.reply-form').not(replyForm).slideUp();
+                
+                // 显示/隐藏当前回复表单
+                replyForm.slideToggle();
+                replyForm.find('.reply-to-author').text(authorName);
+            });
+            
+            // 取消回复
+            $('.cancel-reply').on('click', function() {
+                $(this).closest('.reply-form').slideUp();
+            });
+            
+            // 提交回复
+            $('.reply-comment-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                var form = $(this);
+                var commentId = form.closest('.reply-form').data('comment-id');
+                var content = form.find('[name="content"]').val().trim();
+                
+                if (!content) {
+                    alert('请输入回复内容');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/forum/comment/' + commentId + '/reply/',
+                    type: 'POST',
+                    data: form.serialize(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            location.reload();
+                        } else {
+                            alert(res.msg || '回复失败');
+                        }
+                    }
+                });
+            });
+            
             // 删除评论
             $('.btn-comment-delete').on('click', function() {
                 if (!confirm('确定要删除这条评论吗？')) {
@@ -585,6 +728,41 @@
                         } else {
                             alert(res.msg);
                         }
+                    }
+                });
+            });
+            
+            // 选择最佳答案（有帮助按钮）
+            $('.btn-select-best-answer').on('click', function() {
+                if (!confirm('确定这条回答对您有帮助吗？选择后将立即分配悬赏积分给回答者，且无法撤销！')) {
+                    return;
+                }
+                
+                var postId = $(this).data('post-id');
+                var commentId = $(this).data('comment-id');
+                var btn = $(this);
+                
+                $.ajax({
+                    url: '/forum/post/' + postId + '/best-answer/' + commentId + '/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            location.reload();
+                        } else {
+                            alert(res.msg || '操作失败，请重试');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        var errorMsg = '操作失败，请稍后重试';
+                        if (xhr.responseJSON && xhr.responseJSON.msg) {
+                            errorMsg = xhr.responseJSON.msg;
+                        }
+                        alert(errorMsg);
                     }
                 });
             });

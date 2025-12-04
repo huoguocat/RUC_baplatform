@@ -160,6 +160,10 @@ def user_account(request):
     else:
         gender = "保密"
     changepwd_form = UserChangePasswordForm
+    
+    # 获取用户积分
+    user_points = user.points if user else 0
+    
     content = {
         "username": username,
         "id": id,
@@ -167,7 +171,9 @@ def user_account(request):
         "gender": gender,
         "changepwd_form": changepwd_form,
         "profileupdate_form": profileupdate_form,
-        "is_teacher": is_teacher, 
+        "is_teacher": is_teacher,
+        "user_points": user_points,
+        "user": user,
     }
     ##print(userinfo.teacher_profile_pic.url)
     return render(request, "account.html", content)

@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
+from django.conf import settings
 from uuid import uuid4
 
 from baweb import models
@@ -49,19 +50,26 @@ def forum_index(request):
         except (ValueError, TypeError):
             pass
     
-    # 3. 搜索功能
+    # 3. 悬赏积分筛选
+    has_bounty = request.GET.get('has_bounty')
+    if has_bounty == '1':
+        posts_query = posts_query.filter(bountyPoints__gt=0)
+    
+    # 4. 搜索功能
     keyword = request.GET.get('keyword', '')
     if keyword:
         posts_query = posts_query.filter(
             Q(title__icontains=keyword) | Q(content__icontains=keyword)
         )
     
-    # 4. 排序逻辑
+    # 5. 排序逻辑
     sort_by = request.GET.get('sort_by', 'heat')
     if sort_by == 'newest':
         posts_query = posts_query.order_by('-createdAt')
     elif sort_by == 'hot':
         posts_query = posts_query.order_by('-heatScore', '-createdAt')
+    elif sort_by == 'bounty':  # 按悬赏积分排序
+        posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
     else:  # 默认热度
         posts_query = posts_query.order_by('-heatScore', '-createdAt')
     
@@ -80,6 +88,11 @@ def forum_index(request):
     total_posts = models.Post.objects.count()
     total_comments = models.PostComment.objects.count()
     
+    # 获取当前用户信息（包括积分）
+    current_user = None
+    if user_id:
+        current_user = models.User.objects.filter(id=user_id).first()
+    
     # 处理标签
     for post in posts_page:
         if post.tags:
@@ -95,7 +108,9 @@ def forum_index(request):
         'sort_by': sort_by,
         'selected_course_id': course_id,
         'selected_category_id': category_id,
+        'has_bounty': has_bounty,
         'user_id': user_id,
+        'current_user': current_user,
         'total_posts': total_posts,
         'total_comments': total_comments,
     }
@@ -145,11 +160,18 @@ def post_list(request, course_id):
     if category_id:
         posts_query = posts_query.filter(category_id=category_id)
     
+    # 悬赏积分筛选
+    has_bounty = request.GET.get('has_bounty')
+    if has_bounty == '1':
+        posts_query = posts_query.filter(bountyPoints__gt=0)
+    
     # 排序
     if sort_by == 'newest':
         posts_query = posts_query.order_by('-createdAt')
     elif sort_by == 'popular':
         posts_query = posts_query.order_by('-viewCount')
+    elif sort_by == 'bounty':  # 按悬赏积分排序
+        posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
     else:  # 默认按热度排序
         posts_query = posts_query.order_by('-heatScore', '-createdAt')
     
@@ -158,6 +180,11 @@ def post_list(request, course_id):
     page_num = request.GET.get('page', 1)
     posts_page = paginator.get_page(page_num)
     
+    # 获取当前用户信息（包括积分）
+    current_user = None
+    if user_id:
+        current_user = models.User.objects.filter(id=user_id).first()
+    
     context = {
         'course': course,
         'posts': posts_page,
@@ -165,7 +192,9 @@ def post_list(request, course_id):
         'keyword': keyword,
         'category_id': category_id,
         'sort_by': sort_by,
+        'has_bounty': has_bounty,
         'user_id': user_id,
+        'current_user': current_user,
     }
     
     return render(request, 'forum/post_list.html', context)
@@ -195,8 +224,8 @@ def post_detail(request, post_id):
     post.viewCount += 1
     post.save(update_fields=['viewCount'])
     
-    # 获取评论（分页）
-    comments_query = models.PostComment.objects.filter(post=post, parentComment__isnull=True)
+    # 获取评论（分页，只获取顶级评论）
+    comments_query = models.PostComment.objects.filter(post=post, parentComment__isnull=True).prefetch_related('replies', 'replies__author')
     paginator = Paginator(comments_query, 10)
     page_num = request.GET.get('page', 1)
     comments_page = paginator.get_page(page_num)
@@ -204,10 +233,12 @@ def post_detail(request, post_id):
     # 检查当前用户是否点赞或收藏
     has_liked = False
     has_collected = False
+    current_user = None
     if user_id:
-        user = models.User.objects.filter(id=user_id).first()
-        has_liked = models.PostLike.objects.filter(post=post, user=user).exists()
-        has_collected = models.PostCollect.objects.filter(post=post, user=user).exists()
+        current_user = models.User.objects.filter(id=user_id).first()
+        if current_user:
+            has_liked = models.PostLike.objects.filter(post=post, user=current_user).exists()
+            has_collected = models.PostCollect.objects.filter(post=post, user=current_user).exists()
     
     # 评论表单
     comment_form = PostCommentForm()
@@ -217,14 +248,21 @@ def post_detail(request, post_id):
     if post.tags:
         tags_list = [tag.strip() for tag in post.tags.split(',') if tag.strip()]
     
+    # 检查是否可以设置最佳答案（只有帖子作者且帖子有悬赏积分且未选择最佳答案）
+    can_select_best_answer = False
+    if current_user and post.author == current_user and post.bountyPoints > 0 and not post.bestAnswer:
+        can_select_best_answer = True
+    
     context = {
         'post': post,
         'comments': comments_page,
         'comment_form': comment_form,
         'user_id': user_id,
+        'current_user': current_user,
         'has_liked': has_liked,
         'has_collected': has_collected,
         'tags_list': tags_list,
+        'can_select_best_answer': can_select_best_answer,
     }
     
     return render(request, 'forum/post_detail.html', context)
@@ -259,19 +297,62 @@ def post_create(request, course_id=None):
     if course_id:
         course = models.Course.objects.filter(id=course_id).first()
         if not course:
-            return JsonResponse({"status": False, "msg": "课程不存在"})
+            if request.method == 'POST':
+                return JsonResponse({"status": False, "msg": "课程不存在"})
+            else:
+                return redirect('/forum/')
     
     if request.method == 'POST':
         form = PostCreateForm(data=request.POST)
         if form.is_valid():
-            post = form.save(commit=False)
-            post.postId = str(uuid4())
-            post.author = user
-            post.course = course  # 若course为None，则帖子不对应任何课程
-            post.heatScore = 0.0  # 初始热度为0
-            post.save()
-            
-            return JsonResponse({"status": True, "postId": post.postId, "msg": "帖子发布成功"})
+            try:
+                post = form.save(commit=False)
+                post.postId = str(uuid4())
+                post.author = user
+                post.course = course  # 若course为None，则帖子不对应任何课程
+                post.heatScore = 0.0  # 初始热度为0
+                
+                # 处理悬赏积分
+                bounty_points = form.cleaned_data.get('bountyPoints', 0) or 0
+                if bounty_points > 0:
+                    # 重新从数据库获取用户对象，确保积分是最新的
+                    user.refresh_from_db()
+                    
+                    # 检查用户积分是否足够
+                    if user.points < bounty_points:
+                        return JsonResponse({"status": False, "msg": f"积分不足，您当前有 {user.points} 积分"})
+                    
+                    # 直接扣除用户积分（避免在setBounty中重复扣除）
+                    user.points -= bounty_points
+                    user.save(update_fields=['points'])
+                    
+                    # 设置帖子悬赏积分（不在这里扣除积分，因为已经扣除了）
+                    post.bountyPoints = bounty_points
+                
+                post.save()
+                
+                # 重新获取用户对象，确保积分是最新的
+                user.refresh_from_db()
+                
+                return JsonResponse({
+                    "status": True, 
+                    "postId": post.postId, 
+                    "msg": "帖子发布成功",
+                    "bounty_points": post.bountyPoints,
+                    "user_points": user.points
+                })
+            except Exception as e:
+                # 捕获所有异常，返回友好的错误信息
+                import traceback
+                error_detail = str(e)
+                # 如果是数据库完整性错误，提供更友好的提示
+                if 'NOT NULL constraint' in error_detail or 'course' in error_detail.lower():
+                    return JsonResponse({"status": False, "msg": "帖子必须关联一个课程，请从课程页面发布帖子。如果需要在论坛首页发帖，请先运行数据库迁移：python manage.py migrate"})
+                # 打印详细错误信息到控制台（用于调试）
+                if settings.DEBUG:
+                    import sys
+                    traceback.print_exc(file=sys.stderr)
+                return JsonResponse({"status": False, "msg": f"发布失败：{error_detail}"})
         else:
             return JsonResponse({"status": False, "errors": form.errors})
     
@@ -456,10 +537,15 @@ def post_collect(request, post_id):
 @require_http_methods(["POST"])
 def comment_add(request, post_id):
     """
-    添加评论到帖子
+    添加评论到帖子（支持回复评论）
     
     Args:
         post_id: 帖子ID (postId)
+    
+    POST参数:
+        content: 评论内容
+        isAnonymous: 是否匿名
+        parent_comment_id: 父评论ID（可选，用于回复评论）
     
     Returns:
         JsonResponse with status
@@ -476,16 +562,26 @@ def comment_add(request, post_id):
     
     user = models.User.objects.filter(id=user_id).first()
     
+    # 检查是否是回复评论
+    parent_comment_id = request.POST.get('parent_comment_id')
+    parent_comment = None
+    if parent_comment_id:
+        parent_comment = models.PostComment.objects.filter(commentId=parent_comment_id).first()
+        if not parent_comment or parent_comment.post != post:
+            return JsonResponse({"status": False, "msg": "父评论不存在或不属于该帖子"})
+    
     form = PostCommentForm(data=request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
         comment.commentId = str(uuid4())
         comment.post = post
         comment.author = user
+        comment.parentComment = parent_comment  # 设置父评论
         comment.save()
         
-        # 更新评论数和热度
-        post.commentCount += 1
+        # 更新评论数和热度（只有顶级评论才增加评论数）
+        if not parent_comment:
+            post.commentCount += 1
         post.heatScore = post.calculateHeat()
         post.save()
         
@@ -541,6 +637,57 @@ def comment_delete(request, comment_id):
         "msg": "评论已删除",
         "comment_count": post.commentCount,
     })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def comment_reply(request, comment_id):
+    """
+    回复评论
+    
+    Args:
+        comment_id: 父评论ID (commentId)
+    
+    POST参数:
+        content: 回复内容
+        isAnonymous: 是否匿名
+    
+    Returns:
+        JsonResponse with status
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    if not user_id:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    parent_comment = models.PostComment.objects.filter(commentId=comment_id).first()
+    if not parent_comment:
+        return JsonResponse({"status": False, "msg": "评论不存在"})
+    
+    user = models.User.objects.filter(id=user_id).first()
+    post = parent_comment.post
+    
+    form = PostCommentForm(data=request.POST)
+    if form.is_valid():
+        # 使用模型的reply方法创建回复
+        reply = parent_comment.reply(
+            reply_content=form.cleaned_data['content'],
+            reply_author=user,
+            is_anonymous=form.cleaned_data.get('isAnonymous', False)
+        )
+        
+        # 更新热度（回复不增加评论数，因为评论数只统计顶级评论）
+        post.heatScore = post.calculateHeat()
+        post.save()
+        
+        return JsonResponse({
+            "status": True,
+            "msg": "回复已发布",
+            "heat_score": post.heatScore,
+        })
+    else:
+        return JsonResponse({"status": False, "errors": form.errors})
 
 
 @csrf_exempt
@@ -692,3 +839,77 @@ def my_collected(request):
     }
     
     return render(request, 'forum/my_collected.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def post_select_best_answer(request, post_id, comment_id):
+    """
+    选择最佳答案并分配积分
+    
+    Args:
+        post_id: 帖子ID (postId)
+        comment_id: 评论ID (commentId)
+    
+    Returns:
+        JsonResponse with status
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    if not user_id:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    post = models.Post.objects.filter(postId=post_id).first()
+    if not post:
+        return JsonResponse({"status": False, "msg": "帖子不存在"})
+    
+    comment = models.PostComment.objects.filter(commentId=comment_id).first()
+    if not comment:
+        return JsonResponse({"status": False, "msg": "评论不存在"})
+    
+    user = models.User.objects.filter(id=user_id).first()
+    
+    # 选择最佳答案
+    if post.selectBestAnswer(comment, user):
+        return JsonResponse({
+            "status": True,
+            "msg": "已选择最佳答案，积分已分配给回答者",
+            "bounty_points": post.bountyPoints,
+        })
+    else:
+        return JsonResponse({"status": False, "msg": "选择最佳答案失败，请检查权限和积分"})
+
+
+def points_ranking(request):
+    """
+    积分排行榜页面
+    
+    Returns:
+        renders forum/points_ranking.html with user ranking
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    # 获取所有用户，按积分降序排列
+    users = models.User.objects.all().order_by('-points')[:100]  # 前100名
+    
+    # 获取当前用户排名
+    current_user_rank = None
+    if user_id:
+        current_user = models.User.objects.filter(id=user_id).first()
+        if current_user:
+            # 计算排名（积分大于当前用户的用户数 + 1）
+            rank = models.User.objects.filter(points__gt=current_user.points).count() + 1
+            current_user_rank = {
+                'user': current_user,
+                'rank': rank,
+            }
+    
+    context = {
+        'users': users,
+        'current_user_rank': current_user_rank,
+        'user_id': user_id,
+    }
+    
+    return render(request, 'forum/points_ranking.html', context)
