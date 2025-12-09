@@ -493,6 +493,16 @@
                                 <i class="fa fa-clock-o" aria-hidden="true"></i> 按时间排行
                             </a>
                         </li>
+                        <li class="list-group-item {% if sort_by == 'bounty' %}active{% endif %}">
+                            <a href="?sort_by=bounty{% if keyword %}&keyword={{ keyword }}{% endif %}">
+                                <i class="fa fa-gift" aria-hidden="true"></i> 按悬赏排序
+                            </a>
+                        </li>
+                        <li class="list-group-item {% if has_bounty == '1' %}active{% endif %}">
+                            <a href="?has_bounty=1{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">
+                                <i class="fa fa-star" aria-hidden="true"></i> 只看悬赏帖
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -558,6 +568,16 @@
                                     <h5 class="post-title">
                                         {% if post.category %}
                                         <span class="label label-info" style="font-size: 11px; margin-right: 8px;">{{ post.category.name }}</span>
+                                        {% endif %}
+                                        {% if post.bountyPoints > 0 %}
+                                        <span class="bounty-badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px; font-weight: 600;">
+                                            <i class="fa fa-gift"></i> 悬赏 {{ post.bountyPoints }} 积分
+                                        </span>
+                                        {% endif %}
+                                        {% if post.bestAnswer %}
+                                        <span class="label label-success" style="font-size: 11px; margin-right: 8px;">
+                                            <i class="fa fa-check-circle"></i> 已解决
+                                        </span>
                                         {% endif %}
                                         {{ post.title }}
                                     </h5>
@@ -639,7 +659,7 @@
                         <img src="{% static 'img/user_pic.png' %}" 
                              class="user-avatar" alt="个人头像">
                         
-                        <h4>{{ user.username|default:"游客" }}</h4>
+                        <h4>{% if user %}{{ user.username }}{% else %}游客{% endif %}</h4>
                         
                         <ul class="list-group">
                             <li class="list-group-item">
