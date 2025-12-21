@@ -54,8 +54,6 @@ urlpatterns = [
     path("profile_pic/update", user.user_pic_update),
     path("description_richtext/update", user.user_des_update),
     path('user/<int:pk>/info', user.user_info),
-    ##图片验证码
-    path('image/code/', user.image_code),
     #学生功能
     path('student/<int:pk>/student_page/', student.student_page),
     path('student/<int:pk>/info/', student.student_info),
@@ -138,6 +136,8 @@ urlpatterns = [
     path('forum/comment/<str:comment_id>/delete/', forum.comment_delete, name='comment_delete'),
     path('forum/comment/<str:comment_id>/like/', forum.comment_like, name='comment_like'),
     path('forum/post/<str:post_id>/best-answer/<str:comment_id>/', forum.post_select_best_answer, name='post_select_best_answer'),
+    path('forum/post/<str:post_id>/pin/', forum.post_pin_toggle, name='post_pin_toggle'),  # 教师置顶帖子
+    path('forum/post/<str:post_id>/teacher-delete/', forum.teacher_delete_post, name='teacher_delete_post'),  # 教师删除帖子
     path('forum/my/posts/', forum.my_posts, name='my_posts'),  # 我的帖子
     path('forum/my/collected/', forum.my_collected, name='my_collected'),  # 我的收藏
     path('forum/points/ranking/', forum.points_ranking, name='points_ranking'),  # 积分排行榜

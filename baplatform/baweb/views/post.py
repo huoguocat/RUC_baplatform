@@ -29,18 +29,18 @@ def post_list(request, course_id):
     if has_bounty == '1':
         posts_query = posts_query.filter(bountyPoints__gt=0)
     
-    # 2. 排序逻辑
+    # 2. 排序逻辑（置顶帖子始终在最前面）
     sort_by = request.GET.get('sort_by', 'heat')
     if sort_by == 'heat':
-        posts_query = posts_query.order_by('-heatScore', '-createdAt')  # 按热度排序
+        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')  # 置顶优先，按热度排序
     elif sort_by == 'newest':
-        posts_query = posts_query.order_by('-createdAt')  # 按时间排序
+        posts_query = posts_query.order_by('-isPinned', '-createdAt')  # 置顶优先，按时间排序
     elif sort_by == 'popular':
-        posts_query = posts_query.order_by('-viewCount', '-createdAt')  # 按浏览数排序
-    elif sort_by == 'bounty':  # 按悬赏积分排序
-        posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-viewCount', '-createdAt')  # 置顶优先，按浏览数排序
+    elif sort_by == 'bounty':  # 置顶优先，按悬赏积分排序
+        posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
     else:
-        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
     
     # 3. 搜索功能
     keyword = request.GET.get('keyword', '')

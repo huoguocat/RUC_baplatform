@@ -5,6 +5,25 @@ from ..utils.bootstrap import BootStrapModelForm
 
 class PostCreateForm(BootStrapModelForm):
     '''创建帖子表单'''
+    
+    category = forms.ChoiceField(
+        label='内容分类',
+        choices=[
+            (1, "问答"),
+            (2, "知识分享"),
+            (3, "资源分享"),
+            (4, "作业讨论"),
+            (5, "课程反馈"),
+            (6, "学习心得"),
+            (7, "求助"),
+            (8, "闲聊"),
+            (9, "通知公告"),
+            (10, "项目协作"),
+        ],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
     tags = forms.CharField(
         label='标签',
         max_length=512,
@@ -27,18 +46,12 @@ class PostCreateForm(BootStrapModelForm):
     
     class Meta:
         model = models.Post
-        fields = ['title', 'content', 'category', 'tags', 'isAnonymous', 'bountyPoints']
+        fields = ['title', 'content', 'tags', 'isAnonymous', 'bountyPoints']
         widgets = {
             'title': forms.TextInput(attrs={'placeholder': '请输入帖子标题...', 'maxlength': 256}),
             'content': forms.Textarea(attrs={'placeholder': '请输入帖子内容...', 'rows': 8}),
             'isAnonymous': forms.CheckboxInput(),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # category 字段处理
-        self.fields['category'].queryset = models.ContentCategory.objects.all()
-        self.fields['category'].label = '内容分类'
 
 
 class PostUpdateForm(BootStrapModelForm):

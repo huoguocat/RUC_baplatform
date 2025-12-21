@@ -690,6 +690,9 @@
                         <div class="post-header">
                             <div class="post-title-area">
                                 <div class="post-title">
+                                    {% if post.isPinned %}
+                                    <i class="fa fa-thumb-tack" style="color: #FA709A; margin-right: 5px;"></i>
+                                    {% endif %}
                                     {{ post.title }}
                                     {% if post.course %}
                                     <span class="course-badge">{{ post.course.name }}</span>
@@ -698,6 +701,11 @@
                                     {% endif %}
                                 </div>
                                 <div class="post-meta">
+                                    {% if post.isPinned %}
+                                    <span class="post-category" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                        <i class="fa fa-thumb-tack"></i> 置顶
+                                    </span>
+                                    {% endif %}
                                     <div class="post-meta-item">
                                         <i class="fa fa-user"></i>
                                         {% if post.isAnonymous %}

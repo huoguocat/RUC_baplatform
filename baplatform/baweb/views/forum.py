@@ -62,16 +62,16 @@ def forum_index(request):
             Q(title__icontains=keyword) | Q(content__icontains=keyword)
         )
     
-    # 5. 排序逻辑
+    # 5. 排序逻辑（置顶帖子始终在最前面）
     sort_by = request.GET.get('sort_by', 'heat')
     if sort_by == 'newest':
-        posts_query = posts_query.order_by('-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-createdAt')
     elif sort_by == 'hot':
-        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
     elif sort_by == 'bounty':  # 按悬赏积分排序
-        posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
     else:  # 默认热度
-        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
     
     # 分页处理
     paginator = Paginator(posts_query, 20)  # 首页每页20条
@@ -165,15 +165,15 @@ def post_list(request, course_id):
     if has_bounty == '1':
         posts_query = posts_query.filter(bountyPoints__gt=0)
     
-    # 排序
+    # 排序（置顶帖子始终在最前面）
     if sort_by == 'newest':
-        posts_query = posts_query.order_by('-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-createdAt')
     elif sort_by == 'popular':
-        posts_query = posts_query.order_by('-viewCount')
+        posts_query = posts_query.order_by('-isPinned', '-viewCount')
     elif sort_by == 'bounty':  # 按悬赏积分排序
-        posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
     else:  # 默认按热度排序
-        posts_query = posts_query.order_by('-heatScore', '-createdAt')
+        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
     
     # 分页
     paginator = Paginator(posts_query, 10)
@@ -253,6 +253,16 @@ def post_detail(request, post_id):
     if current_user and post.author == current_user and post.bountyPoints > 0 and not post.bestAnswer:
         can_select_best_answer = True
     
+    # 检查当前用户是否是该课程的教师
+    is_teacher = False
+    if current_user and current_user.type == 2 and post.course:
+        try:
+            teacher_info = models.TeacherInfo.objects.get(user=current_user)
+            if post.course.teacher == teacher_info:
+                is_teacher = True
+        except models.TeacherInfo.DoesNotExist:
+            pass
+    
     context = {
         'post': post,
         'comments': comments_page,
@@ -263,6 +273,7 @@ def post_detail(request, post_id):
         'has_collected': has_collected,
         'tags_list': tags_list,
         'can_select_best_answer': can_select_best_answer,
+        'is_teacher': is_teacher,
     }
     
     return render(request, 'forum/post_detail.html', context)
@@ -312,6 +323,15 @@ def post_create(request, course_id=None):
                 post.course = course  # 若course为None，则帖子不对应任何课程
                 post.heatScore = 0.0  # 初始热度为0
                 
+                # 处理分类字段（如果提交了分类）
+                category_value = form.cleaned_data.get('category')
+                if category_value:
+                    # 获取或创建对应的ContentCategory对象
+                    category_obj, _ = models.ContentCategory.objects.get_or_create(
+                        name=int(category_value)
+                    )
+                    post.category = category_obj
+                
                 # 处理悬赏积分
                 bounty_points = form.cleaned_data.get('bountyPoints', 0) or 0
                 if bounty_points > 0:
@@ -345,9 +365,6 @@ def post_create(request, course_id=None):
                 # 捕获所有异常，返回友好的错误信息
                 import traceback
                 error_detail = str(e)
-                # 如果是数据库完整性错误，提供更友好的提示
-                if 'NOT NULL constraint' in error_detail or 'course' in error_detail.lower():
-                    return JsonResponse({"status": False, "msg": "帖子必须关联一个课程，请从课程页面发布帖子。如果需要在论坛首页发帖，请先运行数据库迁移：python manage.py migrate"})
                 # 打印详细错误信息到控制台（用于调试）
                 if settings.DEBUG:
                     import sys
@@ -913,3 +930,111 @@ def points_ranking(request):
     }
     
     return render(request, 'forum/points_ranking.html', context)
+
+
+@require_http_methods(["POST"])
+def post_pin_toggle(request, post_id):
+    """
+    教师置顶/取消置顶帖子
+    只有帖子所属课程的教师才能置顶该帖子
+    
+    Args:
+        post_id: 帖子ID (postId)
+    
+    Returns:
+        JsonResponse with status
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    if not user_id:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    # 获取帖子
+    post = models.Post.objects.filter(postId=post_id).first()
+    if not post:
+        return JsonResponse({"status": False, "msg": "帖子不存在"})
+    
+    # 检查帖子是否属于某个课程
+    if not post.course:
+        return JsonResponse({"status": False, "msg": "只有课程内的帖子才能被置顶"})
+    
+    # 获取当前用户
+    user = models.User.objects.filter(id=user_id).first()
+    if not user:
+        return JsonResponse({"status": False, "msg": "用户不存在"})
+    
+    # 检查用户是否是教师
+    if user.type != 2:
+        return JsonResponse({"status": False, "msg": "只有教师才能置顶帖子"})
+    
+    # 检查教师是否是该课程的授课老师
+    try:
+        teacher_info = models.TeacherInfo.objects.get(user=user)
+        if post.course.teacher != teacher_info:
+            return JsonResponse({"status": False, "msg": "只有该课程的授课教师才能置顶帖子"})
+    except models.TeacherInfo.DoesNotExist:
+        return JsonResponse({"status": False, "msg": "教师信息不存在"})
+    
+    # 切换置顶状态
+    if post.isPinned:
+        post.isPinned = False
+        post.pinnedAt = None
+        post.save()
+        return JsonResponse({"status": True, "msg": "已取消置顶", "isPinned": False})
+    else:
+        post.isPinned = True
+        post.pinnedAt = timezone.now()
+        post.save()
+        return JsonResponse({"status": True, "msg": "已置顶", "isPinned": True})
+
+
+@require_http_methods(["POST"])
+def teacher_delete_post(request, post_id):
+    """
+    教师删除课程内的帖子
+    只有帖子所属课程的教师才能删除该帖子
+    
+    Args:
+        post_id: 帖子ID (postId)
+    
+    Returns:
+        JsonResponse with status
+    """
+    info = request.session.get('info', {})
+    user_id = info.get('id')
+    
+    if not user_id:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    # 获取帖子
+    post = models.Post.objects.filter(postId=post_id).first()
+    if not post:
+        return JsonResponse({"status": False, "msg": "帖子不存在"})
+    
+    # 检查帖子是否属于某个课程
+    if not post.course:
+        return JsonResponse({"status": False, "msg": "只有课程内的帖子才能被教师删除"})
+    
+    # 获取当前用户
+    user = models.User.objects.filter(id=user_id).first()
+    if not user:
+        return JsonResponse({"status": False, "msg": "用户不存在"})
+    
+    # 检查用户是否是教师
+    if user.type != 2:
+        return JsonResponse({"status": False, "msg": "只有教师才能删除课程内的帖子"})
+    
+    # 检查教师是否是该课程的授课老师
+    try:
+        teacher_info = models.TeacherInfo.objects.get(user=user)
+        if post.course.teacher != teacher_info:
+            return JsonResponse({"status": False, "msg": "只有该课程的授课教师才能删除帖子"})
+    except models.TeacherInfo.DoesNotExist:
+        return JsonResponse({"status": False, "msg": "教师信息不存在"})
+    
+    # 删除帖子
+    post_title = post.title
+    post.delete()
+    
+    return JsonResponse({"status": True, "msg": f"已删除帖子「{post_title}」"})

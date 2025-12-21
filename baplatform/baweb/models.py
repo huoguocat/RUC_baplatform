@@ -178,6 +178,13 @@ class ContentCategory(models.Model):
         (1, "问答"),
         (2, "知识分享"),
         (3, "资源分享"),
+        (4, "作业讨论"),
+        (5, "课程反馈"),
+        (6, "学习心得"),
+        (7, "求助"),
+        (8, "闲聊"),
+        (9, "通知公告"),
+        (10, "项目协作"),
     )
     name = models.SmallIntegerField(verbose_name='内容分类', choices=category_choices, default=1)
     description = models.CharField(verbose_name='分类描述', max_length=256, blank=True)
@@ -227,9 +234,14 @@ class Post(models.Model):
     bestAnswer = models.ForeignKey('PostComment', verbose_name='最佳答案', on_delete=models.SET_NULL, 
                                    null=True, blank=True, related_name='best_answer_posts',
                                    help_text='被选为最佳答案的评论')
+    
+    # 教师特权
+    isPinned = models.BooleanField(verbose_name='是否置顶', default=False, help_text='教师可以置顶课程内的帖子')
+    pinnedAt = models.DateTimeField(verbose_name='置顶时间', null=True, blank=True)
+    isDeletedByTeacher = models.BooleanField(verbose_name='是否被教师删除', default=False, help_text='教师可以删除课程内的帖子')
 
     class Meta:
-        ordering = ['-heatScore', '-createdAt']
+        ordering = ['-isPinned', '-heatScore', '-createdAt']
         indexes = [
             models.Index(fields=['course', '-heatScore']),
             models.Index(fields=['-createdAt']),

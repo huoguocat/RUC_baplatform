@@ -39,12 +39,7 @@ class UserLoginForm(BootStrapForm):
         widget=forms.PasswordInput(render_value=True),
         required=True
     )
-    code = forms.CharField(
-        label="验证码",
-        widget = forms.TextInput,
-        required=True
-    )
-    fields =  ['username', 'password', 'code']
+    fields =  ['username', 'password']
     def clean_password(self):
         pwd = self.cleaned_data.get('password')
         return md5(pwd)

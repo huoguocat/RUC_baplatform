@@ -60,13 +60,6 @@ def user_login(request):
 
     form = UserLoginForm(data=request.POST)
     if form.is_valid():
-        user_input_code = form.cleaned_data.pop("code")
-        code = request.session.get("image_code", "")
-        # 验证码校验
-        if code.upper() != user_input_code.upper():
-            form.add_error("code", "验证码错误")
-            return render(request, "login.html", {'form': form, "signupform": signupform})
-
         user_object = models.User.objects.filter(**form.cleaned_data).first()
         # print(user_object)
         # 密码校验

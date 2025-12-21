@@ -293,6 +293,12 @@
                 </div>
                 
                 <div style="margin-top: 15px;">
+                    {% if post.isPinned %}
+                    <span class="post-category" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                        <i class="fa fa-thumb-tack"></i> 置顶
+                    </span>
+                    {% endif %}
+                    
                     {% if post.category %}
                     <span class="post-category">
                         <i class="fa fa-tag"></i> {{ post.category.name }}
@@ -342,6 +348,24 @@
                     </button>
                     <button class="btn btn-sm btn-danger btn-delete" data-post-id="{{ post.postId }}">
                         <i class="fa fa-trash"></i> 删除
+                    </button>
+                </div>
+                {% endif %}
+                
+                <!-- 教师特权操作 -->
+                {% if is_teacher and post.course %}
+                <div>
+                    {% if post.isPinned %}
+                    <button class="btn btn-sm btn-info btn-pin" data-post-id="{{ post.postId }}" data-is-pinned="true">
+                        <i class="fa fa-thumb-tack"></i> 取消置顶
+                    </button>
+                    {% else %}
+                    <button class="btn btn-sm btn-success btn-pin" data-post-id="{{ post.postId }}" data-is-pinned="false">
+                        <i class="fa fa-thumb-tack"></i> 置顶帖子
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-sm btn-danger btn-teacher-delete" data-post-id="{{ post.postId }}">
+                        <i class="fa fa-ban"></i> 删除帖子
                     </button>
                 </div>
                 {% endif %}
@@ -725,6 +749,60 @@
                         if (res.status) {
                             alert(res.msg);
                             window.location.href = '/home/';
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+            
+            // 教师置顶/取消置顶帖子
+            $('.btn-pin').on('click', function() {
+                var postId = $(this).data('post-id');
+                var isPinned = $(this).data('is-pinned');
+                var action = isPinned ? '取消置顶' : '置顶';
+                
+                if (!confirm('确定要' + action + '这个帖子吗？')) {
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/forum/post/' + postId + '/pin/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            location.reload();
+                        } else {
+                            alert(res.msg);
+                        }
+                    }
+                });
+            });
+            
+            // 教师删除帖子
+            $('.btn-teacher-delete').on('click', function() {
+                if (!confirm('确定要删除这个帖子吗？此操作不可恢复！')) {
+                    return;
+                }
+                
+                var postId = $(this).data('post-id');
+                
+                $.ajax({
+                    url: '/forum/post/' + postId + '/teacher-delete/',
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            window.location.href = '/forum/';
                         } else {
                             alert(res.msg);
                         }
