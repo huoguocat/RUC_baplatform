@@ -566,6 +566,11 @@
                                 <!-- 帖子标题和作者信息 -->
                                 <div class="col-md-9">
                                     <h5 class="post-title">
+                                        {% if post.isPinned %}
+                                        <span class="label" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%); font-size: 11px; margin-right: 8px;">
+                                            <i class="fa fa-thumb-tack"></i> 置顶
+                                        </span>
+                                        {% endif %}
                                         {% if post.category %}
                                         <span class="label label-info" style="font-size: 11px; margin-right: 8px;">{{ post.category.get_name_display }}</span>
                                         {% endif %}

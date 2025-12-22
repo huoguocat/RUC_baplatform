@@ -97,7 +97,8 @@ def forum_index(request):
                 posts=posts_list,
                 user=current_user,
                 sort_by=sort_by,
-                enable_personalization=True if current_user else False
+                enable_personalization=True if current_user else False,
+                respect_pinned=False  # 论坛首页不考虑置顶
             )
             
             # 手动分页
@@ -109,12 +110,13 @@ def forum_index(request):
             posts_query = posts_query.filter(
                 Q(title__icontains=keyword) | Q(content__icontains=keyword)
             )
+            # 论坛首页不按isPinned排序（课程置顶只在课程页面生效）
             if sort_by == 'newest':
-                posts_query = posts_query.order_by('-isPinned', '-createdAt')
+                posts_query = posts_query.order_by('-createdAt')
             elif sort_by == 'bounty':
-                posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
+                posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
             else:
-                posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
+                posts_query = posts_query.order_by('-heatScore', '-createdAt')
             
             paginator = Paginator(posts_query, 20)
             page_num = request.GET.get('page', 1)
@@ -129,16 +131,18 @@ def forum_index(request):
                 posts=posts_list,
                 user=current_user,
                 sort_by=sort_by,
-                enable_personalization=True if current_user else False
+                enable_personalization=True if current_user else False,
+                respect_pinned=False  # 论坛首页不考虑置顶
             )
         except:
             # 降级到传统排序
+            # 论坛首页不按isPinned排序（课程置顶只在课程页面生效）
             if sort_by == 'newest':
-                posts_query = posts_query.order_by('-isPinned', '-createdAt')
+                posts_query = posts_query.order_by('-createdAt')
             elif sort_by == 'bounty':
-                posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
+                posts_query = posts_query.order_by('-bountyPoints', '-createdAt')
             else:
-                posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
+                posts_query = posts_query.order_by('-heatScore', '-createdAt')
             posts_list = list(posts_query)
         
         # 分页处理

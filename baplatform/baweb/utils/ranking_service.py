@@ -232,7 +232,8 @@ class RankingService:
     @staticmethod
     def personalized_ranking(posts: List[Post], 
                            user: Optional[User] = None,
-                           personalization_weight: float = 0.3) -> List[Post]:
+                           personalization_weight: float = 0.3,
+                           respect_pinned: bool = True) -> List[Post]:
         """
         个性化排名
         
@@ -244,13 +245,17 @@ class RankingService:
             posts: 帖子列表
             user: 用户对象（None表示非个性化）
             personalization_weight: 个性化权重
+            respect_pinned: 是否尊重置顶状态
             
         Returns:
             排序后的帖子列表
         """
         if not user:
             # 非个性化，直接按热度排序
-            return sorted(posts, key=lambda p: (-p.isPinned, -p.heatScore))
+            if respect_pinned:
+                return sorted(posts, key=lambda p: (-p.isPinned, -p.heatScore))
+            else:
+                return sorted(posts, key=lambda p: -p.heatScore)
         
         # 获取用户画像
         user_profile = RankingService.get_user_profile(user)
@@ -269,8 +274,11 @@ class RankingService:
             
             scored_posts.append((post, final_score))
         
-        # 排序：置顶优先，然后按最终分数
-        scored_posts.sort(key=lambda x: (-x[0].isPinned, -x[1]))
+        # 排序：是否置顶优先，然后按最终分数
+        if respect_pinned:
+            scored_posts.sort(key=lambda x: (-x[0].isPinned, -x[1]))
+        else:
+            scored_posts.sort(key=lambda x: -x[1])
         
         return [post for post, score in scored_posts]
     
@@ -278,7 +286,8 @@ class RankingService:
     def rank_posts(posts: List[Post],
                   user: Optional[User] = None,
                   sort_by: str = 'heat',
-                  enable_personalization: bool = True) -> List[Post]:
+                  enable_personalization: bool = True,
+                  respect_pinned: bool = True) -> List[Post]:
         """
         对帖子列表进行排名
         
@@ -287,24 +296,34 @@ class RankingService:
             user: 用户对象
             sort_by: 排序方式 ('heat', 'newest', 'bounty')
             enable_personalization: 是否启用个性化
+            respect_pinned: 是否尊重置顶状态（False时忽略isPinned字段）
             
         Returns:
             排序后的帖子列表
         """
         if sort_by == 'newest':
             # 按时间排序
-            return sorted(posts, key=lambda p: (-p.isPinned, -p.createdAt.timestamp()))
+            if respect_pinned:
+                return sorted(posts, key=lambda p: (-p.isPinned, -p.createdAt.timestamp()))
+            else:
+                return sorted(posts, key=lambda p: -p.createdAt.timestamp())
         
         elif sort_by == 'bounty':
             # 按悬赏积分排序
-            return sorted(posts, key=lambda p: (-p.isPinned, -p.bountyPoints, -p.createdAt.timestamp()))
+            if respect_pinned:
+                return sorted(posts, key=lambda p: (-p.isPinned, -p.bountyPoints, -p.createdAt.timestamp()))
+            else:
+                return sorted(posts, key=lambda p: (-p.bountyPoints, -p.createdAt.timestamp()))
         
         else:  # 'heat' or default
             # 按热度排序（支持个性化）
             if enable_personalization and user:
-                return RankingService.personalized_ranking(posts, user)
+                return RankingService.personalized_ranking(posts, user, respect_pinned=respect_pinned)
             else:
-                return sorted(posts, key=lambda p: (-p.isPinned, -p.heatScore))
+                if respect_pinned:
+                    return sorted(posts, key=lambda p: (-p.isPinned, -p.heatScore))
+                else:
+                    return sorted(posts, key=lambda p: -p.heatScore)
     
     @staticmethod
     def get_trending_posts(time_window_days: int = 7, limit: int = 10) -> List[Post]:
