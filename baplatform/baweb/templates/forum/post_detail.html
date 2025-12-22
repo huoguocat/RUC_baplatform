@@ -301,7 +301,7 @@
                     
                     {% if post.category %}
                     <span class="post-category">
-                        <i class="fa fa-tag"></i> {{ post.category.name }}
+                        <i class="fa fa-tag"></i> {{ post.category.get_name_display }}
                     </span>
                     {% endif %}
                     

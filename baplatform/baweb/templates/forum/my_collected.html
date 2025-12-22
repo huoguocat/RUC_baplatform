@@ -510,7 +510,7 @@
                             </div>
                             {% if collect.post.category %}
                             <span class="post-category">
-                                <i class="fa fa-tag"></i> {{ collect.post.category.name }}
+                                <i class="fa fa-tag"></i> {{ collect.post.category.get_name_display }}
                             </span>
                             {% endif %}
                         </div>
