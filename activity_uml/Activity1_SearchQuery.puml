@@ -1,0 +1,50 @@
+@startuml SearchQueryActivity
+!theme plain
+skinparam defaultFontName Arial
+skinparam activityBackgroundColor #F8F9FA
+skinparam activityBorderColor #343A40
+skinparam activityDiamondBackgroundColor #FFF3CD
+
+title Activity 1: Search Query Processing
+
+start
+
+:User enters search query;
+
+:SearchEngine receives query;
+
+fork
+  :Extract query text;
+  :Tokenize and normalize;
+fork again
+  :Generate query embedding;
+  :Create 768-dim vector;
+end fork
+
+if (Category filter selected?) then (yes)
+  :Apply category filter;
+  note right: Q_AND_A, KNOWLEDGE_SHARING, or RESOURCE_SHARING
+else (no)
+  :Include all categories;
+endif
+
+if (Tags selected?) then (yes)
+  :Apply tag filters;
+else (no)
+  :No tag filtering;
+endif
+
+:Create SearchQuery object;
+note right
+  - queryText: String
+  - queryVector: Vector[768]
+  - selectedCategory
+  - selectedTags
+  - sortBy
+end note
+
+:Pass query to search engine;
+
+stop
+
+@enduml

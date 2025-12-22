@@ -14,6 +14,14 @@ class User(models.Model):
     type = models.SmallIntegerField(verbose_name='用户类型', choices=type_choices)
     # 积分系统
     points = models.IntegerField(verbose_name='积分', default=100, help_text='用户积分，初始100分')
+    
+    # 用户画像系统（用于个性化推荐）
+    userVector = models.BinaryField(verbose_name='用户向量', null=True, blank=True,
+                                   help_text='768维用户偏好向量，用于个性化推荐')
+    interactionHistory = models.TextField(verbose_name='交互历史', blank=True,
+                                         help_text='JSON格式的帖子交互历史 {postId: score}')
+    preferredCategories = models.TextField(verbose_name='偏好分类', blank=True,
+                                          help_text='JSON格式的分类偏好 {categoryId: score}')
 
 class StudentInfo(models.Model):
     '''学生信息表'''
@@ -485,3 +493,20 @@ class PostComment(models.Model):
         )
         return reply
 
+
+class PostView(models.Model):
+    '''帖子浏览记录表'''
+    post = models.ForeignKey(Post, verbose_name='帖子', on_delete=models.CASCADE, related_name='views')
+    user = models.ForeignKey(User, verbose_name='浏览用户', on_delete=models.CASCADE, related_name='viewed_posts')
+    viewedAt = models.DateTimeField(verbose_name='浏览时间', auto_now=True)
+
+    class Meta:
+        unique_together = ('post', 'user')  # 每个用户每个帖子只记录一次
+        verbose_name_plural = '帖子浏览记录'
+        indexes = [
+            models.Index(fields=['user', '-viewedAt']),
+            models.Index(fields=['post']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} viewed {self.post.title}"

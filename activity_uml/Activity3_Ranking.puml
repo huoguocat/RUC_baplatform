@@ -1,0 +1,68 @@
+@startuml RankingActivity
+!theme plain
+skinparam defaultFontName Arial
+skinparam activityBackgroundColor #F8F9FA
+skinparam activityBorderColor #343A40
+skinparam activityDiamondBackgroundColor #FFF3CD
+
+title Activity 3: Post Ranking and Scoring
+
+start
+
+:Receive candidate posts;
+
+partition "Heat Score Calculation" {
+  repeat
+    :Select next post;
+    
+    fork
+      :Calculate engagement score;
+      note right
+        likeCount × 1.0
+        + commentCount × 2.0
+        + collectCount × 3.0
+      end note
+    fork again
+      :Calculate freshness;
+      :Apply time decay factor;
+    fork again
+      :Calculate view popularity;
+      :Normalize viewCount;
+    end fork
+    
+    :Combine scores;
+    :heatScore = weighted sum;
+    
+  repeat while (More posts?) is (yes)
+  ->no;
+}
+
+:Get user profile;
+
+partition "Personalization" {
+  :Load user vector[768];
+  :Load interaction history;
+  :Load preferred categories;
+  
+  repeat
+    :Select next post;
+    
+    :Calculate relevance\nto user preferences;
+    
+    :Adjust score based on\nuser interaction history;
+    
+    :Apply category preference\nboost;
+    
+    :Update final score;
+    
+  repeat while (More posts?) is (yes)
+  ->no;
+}
+
+:Sort posts by final score\n(descending);
+
+:Return ranked post list;
+
+stop
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml RecommendationActivity
+!theme plain
+skinparam defaultFontName Arial
+skinparam activityBackgroundColor #F8F9FA
+skinparam activityBorderColor #343A40
+skinparam activityDiamondBackgroundColor #FFF3CD
+
+title Activity 4: Content Recommendation
+
+start
+
+:User views a post;
+
+:Get current post embedding;
+
+partition "Similar Post Discovery" {
+  :Load all post embeddings;
+  
+  :Calculate similarity\nbetween current post\nand all other posts;
+  
+  :Sort by similarity score;
+  
+  :Filter out already viewed;
+  
+  :Select top N similar posts;
+}
+
+fork
+  partition "Trending Content" {
+    :Get trending tags;
+    :Find posts with\ntrending tags;
+    :Calculate trend score;
+  }
+fork again
+  partition "User-based CF" {
+    :Get user interaction history;
+    :Find similar users;
+    :Get posts liked by\nsimilar users;
+  }
+end fork
+
+:Merge recommendation lists;
+
+:Remove duplicates;
+
+:Apply personalized reranking;
+
+:Generate final\nrecommendation list;
+
+:Display recommendations\nto user;
+
+if (User clicks recommendation?) then (yes)
+  :Track interaction;
+  :Update user profile;
+  :Recalculate user vector;
+else (no)
+  :No action;
+endif
+
+stop
+
+@enduml

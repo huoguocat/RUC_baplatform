@@ -1,0 +1,46 @@
+@startuml ContentRetrievalActivity
+!theme plain
+skinparam defaultFontName Arial
+skinparam activityBackgroundColor #F8F9FA
+skinparam activityBorderColor #343A40
+skinparam activityDiamondBackgroundColor #FFF3CD
+
+title Activity 2: Content Retrieval
+
+start
+
+:Receive SearchQuery object;
+
+if (Search type?) then (Semantic)
+  :Perform semantic search;
+  :Compare query vector\nwith post embeddings;
+  :Calculate cosine similarity;
+  :Retrieve top K similar posts;
+else (Keyword)
+  :Perform keyword search;
+  :Match query text\nwith post titles/content;
+  :Use text indexing;
+  :Retrieve matching posts;
+endif
+
+:Merge and deduplicate results;
+
+partition "Filtering" {
+  if (Category filter exists?) then (yes)
+    :Filter posts by category;
+    :Keep only matching posts;
+  endif
+  
+  if (Tag filter exists?) then (yes)
+    :Filter posts by tags;
+    :Keep posts with selected tags;
+  endif
+}
+
+:Generate candidate post list;
+
+:Return posts to RankingService;
+
+stop
+
+@enduml

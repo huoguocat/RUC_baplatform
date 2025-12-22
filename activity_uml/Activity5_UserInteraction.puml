@@ -1,0 +1,75 @@
+@startuml UserInteractionActivity
+!theme plain
+skinparam defaultFontName Arial
+skinparam activityBackgroundColor #F8F9FA
+skinparam activityBorderColor #343A40
+skinparam activityDiamondBackgroundColor #FFF3CD
+
+title Activity 5: User Interaction Tracking
+
+start
+
+:User interacts with content;
+
+switch (Interaction type?)
+case (View)
+  :Increment viewCount;
+  :Record view timestamp;
+  :Update view history;
+  
+case (Like)
+  :Increment likeCount;
+  :Add to user likes;
+  :Update post heat score;
+  :Award points to author;
+  
+case (Comment)
+  :Increment commentCount;
+  :Create comment record;
+  :Update post heat score;
+  :Notify post author;
+  
+case (Collect)
+  :Increment collectCount;
+  :Add to user collection;
+  :Update post heat score;
+  :Award points to author;
+  
+endswitch
+
+partition "User Profile Update" {
+  :Get interaction details;
+  
+  :Update interaction history;
+  note right
+    Map<postId, interactionScore>
+  end note
+  
+  :Update category preferences;
+  
+  :Collect post embeddings\nfrom interacted content;
+  
+  :Recalculate user vector;
+  note right
+    Average of interacted
+    post embeddings
+  end note
+  
+  :Update user profile\nin database;
+}
+
+partition "Post Metrics Update" {
+  :Recalculate post heat score;
+  
+  :Update ranking position;
+  
+  if (Significant change?) then (yes)
+    :Trigger reranking;
+  endif
+}
+
+:Prepare personalized\ncontent for next visit;
+
+stop
+
+@enduml
