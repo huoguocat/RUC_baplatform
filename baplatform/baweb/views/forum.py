@@ -16,6 +16,13 @@ from uuid import uuid4
 from baweb import models
 from ..forms.postforms import PostCreateForm, PostUpdateForm, PostCommentForm, PostSearchForm
 
+# 导入新的Activity服务
+from ..utils.search_engine import SearchEngine
+from ..utils.content_retrieval import ContentRetrieval
+from ..utils.ranking_service import RankingService
+from ..utils.recommendation_service import RecommendationService
+from ..utils.interaction_tracker import InteractionTracker
+
 
 def forum_index(request):
     """
@@ -26,6 +33,14 @@ def forum_index(request):
     """
     info = request.session.get('info', {})
     user_id = info.get('id')
+    
+    # 获取当前用户对象（如果已登录）
+    current_user = None
+    if user_id:
+        try:
+            current_user = models.User.objects.get(id=user_id)
+        except models.User.DoesNotExist:
+            pass
     
     # 基础查询:获取所有帖子
     posts_query = models.Post.objects.all().select_related('author', 'category', 'course')
@@ -55,28 +70,81 @@ def forum_index(request):
     if has_bounty == '1':
         posts_query = posts_query.filter(bountyPoints__gt=0)
     
-    # 4. 搜索功能
+    # 4. 搜索功能 - 使用Activity 1 & 2服务
     keyword = request.GET.get('keyword', '')
-    if keyword:
-        posts_query = posts_query.filter(
-            Q(title__icontains=keyword) | Q(content__icontains=keyword)
-        )
-    
-    # 5. 排序逻辑（置顶帖子始终在最前面）
     sort_by = request.GET.get('sort_by', 'heat')
-    if sort_by == 'newest':
-        posts_query = posts_query.order_by('-isPinned', '-createdAt')
-    elif sort_by == 'hot':
-        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
-    elif sort_by == 'bounty':  # 按悬赏积分排序
-        posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
-    else:  # 默认热度
-        posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
     
-    # 分页处理
-    paginator = Paginator(posts_query, 20)  # 首页每页20条
-    page_num = request.GET.get('page', 1)
-    posts_page = paginator.get_page(page_num)
+    if keyword:
+        # 使用新的搜索引擎服务
+        try:
+            search_query = SearchEngine.create_search_query(
+                query_text=keyword,
+                category_id=int(category_id) if category_id else None,
+                tags=None,
+                sort_by=sort_by,
+                course_id=int(course_id) if course_id and course_id != 'none' else (-1 if course_id == 'none' else None)
+            )
+            
+            # 使用内容检索服务
+            posts_list = ContentRetrieval.retrieve(search_query, top_k=100)
+            
+            # 应用悬赏积分过滤
+            if has_bounty == '1':
+                posts_list = [p for p in posts_list if p.bountyPoints > 0]
+            
+            # 使用排名服务进行个性化排名
+            posts_list = RankingService.rank_posts(
+                posts=posts_list,
+                user=current_user,
+                sort_by=sort_by,
+                enable_personalization=True if current_user else False
+            )
+            
+            # 手动分页
+            paginator = Paginator(posts_list, 20)
+            page_num = request.GET.get('page', 1)
+            posts_page = paginator.get_page(page_num)
+        except Exception as e:
+            # 降级到传统搜索
+            posts_query = posts_query.filter(
+                Q(title__icontains=keyword) | Q(content__icontains=keyword)
+            )
+            if sort_by == 'newest':
+                posts_query = posts_query.order_by('-isPinned', '-createdAt')
+            elif sort_by == 'bounty':
+                posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
+            else:
+                posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
+            
+            paginator = Paginator(posts_query, 20)
+            page_num = request.GET.get('page', 1)
+            posts_page = paginator.get_page(page_num)
+    else:
+        # 5. 无搜索关键词时的排序逻辑 - 使用Activity 3服务
+        posts_list = list(posts_query)
+        
+        # 使用排名服务进行个性化排名
+        try:
+            posts_list = RankingService.rank_posts(
+                posts=posts_list,
+                user=current_user,
+                sort_by=sort_by,
+                enable_personalization=True if current_user else False
+            )
+        except:
+            # 降级到传统排序
+            if sort_by == 'newest':
+                posts_query = posts_query.order_by('-isPinned', '-createdAt')
+            elif sort_by == 'bounty':
+                posts_query = posts_query.order_by('-isPinned', '-bountyPoints', '-createdAt')
+            else:
+                posts_query = posts_query.order_by('-isPinned', '-heatScore', '-createdAt')
+            posts_list = list(posts_query)
+        
+        # 分页处理
+        paginator = Paginator(posts_list, 20)
+        page_num = request.GET.get('page', 1)
+        posts_page = paginator.get_page(page_num)
     
     # 获取所有课程用于筛选
     courses = models.Course.objects.all().order_by('order')
@@ -215,14 +283,28 @@ def post_detail(request, post_id):
     info = request.session.get('info', {})
     user_id = info.get('id')
     
+    # 获取当前用户信息（需要提前获取，用于浏览跟踪）
+    current_user = None
+    if user_id:
+        current_user = models.User.objects.filter(id=user_id).first()
+    
     # 获取帖子
     post = models.Post.objects.filter(postId=post_id).first()
     if not post:
         return redirect('/')
     
-    # 增加浏览数
-    post.viewCount += 1
-    post.save(update_fields=['viewCount'])
+    # 使用Activity 5服务记录浏览行为
+    if user_id and current_user:
+        try:
+            InteractionTracker.track_view(current_user, post)
+        except:
+            # 降级到传统方式
+            post.viewCount += 1
+            post.save(update_fields=['viewCount'])
+    else:
+        # 未登录用户仍然增加浏览数
+        post.viewCount += 1
+        post.save(update_fields=['viewCount'])
     
     # 获取评论（分页，只获取顶级评论）
     comments_query = models.PostComment.objects.filter(post=post, parentComment__isnull=True).prefetch_related('replies', 'replies__author')
@@ -233,12 +315,9 @@ def post_detail(request, post_id):
     # 检查当前用户是否点赞或收藏
     has_liked = False
     has_collected = False
-    current_user = None
-    if user_id:
-        current_user = models.User.objects.filter(id=user_id).first()
-        if current_user:
-            has_liked = models.PostLike.objects.filter(post=post, user=current_user).exists()
-            has_collected = models.PostCollect.objects.filter(post=post, user=current_user).exists()
+    if current_user:
+        has_liked = models.PostLike.objects.filter(post=post, user=current_user).exists()
+        has_collected = models.PostCollect.objects.filter(post=post, user=current_user).exists()
     
     # 评论表单
     comment_form = PostCommentForm()
@@ -263,6 +342,19 @@ def post_detail(request, post_id):
         except models.TeacherInfo.DoesNotExist:
             pass
     
+    # 使用Activity 4服务生成推荐内容
+    recommended_posts = []
+    trending_tags = []
+    try:
+        recommended_posts = RecommendationService.recommend_for_post_view(
+            post=post,
+            user=current_user,
+            limit=5
+        )
+        trending_tags = RecommendationService.get_trending_tags(time_window_days=7, limit=10)
+    except:
+        pass
+    
     context = {
         'post': post,
         'comments': comments_page,
@@ -274,6 +366,8 @@ def post_detail(request, post_id):
         'tags_list': tags_list,
         'can_select_best_answer': can_select_best_answer,
         'is_teacher': is_teacher,
+        'recommended_posts': recommended_posts,
+        'trending_tags': trending_tags,
     }
     
     return render(request, 'forum/post_detail.html', context)
@@ -474,30 +568,38 @@ def post_like(request, post_id):
     
     user = models.User.objects.filter(id=user_id).first()
     
-    # 检查是否已点赞
-    like = models.PostLike.objects.filter(post=post, user=user).first()
-    
-    if like:
-        # 取消点赞
-        like.delete()
-        post.likeCount = max(0, post.likeCount - 1)
-        action = 'unlike'
-    else:
-        # 点赞
-        models.PostLike.objects.create(post=post, user=user)
-        post.likeCount += 1
-        action = 'like'
-    
-    # 更新热度
-    post.heatScore = post.calculateHeat()
-    post.save()
-    
-    return JsonResponse({
-        "status": True,
-        "action": action,
-        "like_count": post.likeCount,
-        "heat_score": post.heatScore,
-    })
+    # 使用Activity 5服务记录点赞行为
+    try:
+        result = InteractionTracker.track_like(user, post)
+        return JsonResponse({
+            "status": result['success'],
+            "action": 'like' if result['is_liked'] else 'unlike',
+            "like_count": post.likeCount,
+            "heat_score": post.heatScore,
+            "msg": result['message']
+        })
+    except Exception as e:
+        # 降级到传统方式
+        like = models.PostLike.objects.filter(post=post, user=user).first()
+        
+        if like:
+            like.delete()
+            post.likeCount = max(0, post.likeCount - 1)
+            action = 'unlike'
+        else:
+            models.PostLike.objects.create(post=post, user=user)
+            post.likeCount += 1
+            action = 'like'
+        
+        post.heatScore = post.calculateHeat()
+        post.save()
+        
+        return JsonResponse({
+            "status": True,
+            "action": action,
+            "like_count": post.likeCount,
+            "heat_score": post.heatScore,
+        })
 
 
 @csrf_exempt
@@ -524,30 +626,38 @@ def post_collect(request, post_id):
     
     user = models.User.objects.filter(id=user_id).first()
     
-    # 检查是否已收藏
-    collect = models.PostCollect.objects.filter(post=post, user=user).first()
-    
-    if collect:
-        # 取消收藏
-        collect.delete()
-        post.collectCount = max(0, post.collectCount - 1)
-        action = 'uncollect'
-    else:
-        # 收藏
-        models.PostCollect.objects.create(post=post, user=user)
-        post.collectCount += 1
-        action = 'collect'
-    
-    # 更新热度
-    post.heatScore = post.calculateHeat()
-    post.save()
-    
-    return JsonResponse({
-        "status": True,
-        "action": action,
-        "collect_count": post.collectCount,
-        "heat_score": post.heatScore,
-    })
+    # 使用Activity 5服务记录收藏行为
+    try:
+        result = InteractionTracker.track_collect(user, post)
+        return JsonResponse({
+            "status": result['success'],
+            "action": 'collect' if result['is_collected'] else 'uncollect',
+            "collect_count": post.collectCount,
+            "heat_score": post.heatScore,
+            "msg": result['message']
+        })
+    except Exception as e:
+        # 降级到传统方式
+        collect = models.PostCollect.objects.filter(post=post, user=user).first()
+        
+        if collect:
+            collect.delete()
+            post.collectCount = max(0, post.collectCount - 1)
+            action = 'uncollect'
+        else:
+            models.PostCollect.objects.create(post=post, user=user)
+            post.collectCount += 1
+            action = 'collect'
+        
+        post.heatScore = post.calculateHeat()
+        post.save()
+        
+        return JsonResponse({
+            "status": True,
+            "action": action,
+            "collect_count": post.collectCount,
+            "heat_score": post.heatScore,
+        })
 
 
 @csrf_exempt
@@ -596,11 +706,15 @@ def comment_add(request, post_id):
         comment.parentComment = parent_comment  # 设置父评论
         comment.save()
         
-        # 更新评论数和热度（只有顶级评论才增加评论数）
+        # 使用Activity 5服务记录评论行为（只有顶级评论才记录）
         if not parent_comment:
-            post.commentCount += 1
-        post.heatScore = post.calculateHeat()
-        post.save()
+            try:
+                InteractionTracker.track_comment(user, post, comment)
+            except:
+                # 降级到传统方式
+                post.commentCount += 1
+                post.heatScore = post.calculateHeat()
+                post.save()
         
         return JsonResponse({
             "status": True,
