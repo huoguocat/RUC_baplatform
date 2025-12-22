@@ -93,11 +93,15 @@ def forum_index(request):
                 posts_list = [p for p in posts_list if p.bountyPoints > 0]
             
             # 使用排名服务进行个性化排名
+            # 当用户选择智能推荐时，强制启用个性化
+            enable_personalization = (sort_by == 'personalized' and current_user is not None) or \
+                                   (sort_by != 'personalized' and current_user is not None)
+            
             posts_list = RankingService.rank_posts(
                 posts=posts_list,
                 user=current_user,
                 sort_by=sort_by,
-                enable_personalization=True if current_user else False,
+                enable_personalization=enable_personalization,
                 respect_pinned=False  # 论坛首页不考虑置顶
             )
             
@@ -127,11 +131,15 @@ def forum_index(request):
         
         # 使用排名服务进行个性化排名
         try:
+            # 当用户选择智能推荐时，强制启用个性化
+            enable_personalization = (sort_by == 'personalized' and current_user is not None) or \
+                                   (sort_by != 'personalized' and current_user is not None)
+            
             posts_list = RankingService.rank_posts(
                 posts=posts_list,
                 user=current_user,
                 sort_by=sort_by,
-                enable_personalization=True if current_user else False,
+                enable_personalization=enable_personalization,
                 respect_pinned=False  # 论坛首页不考虑置顶
             )
         except:

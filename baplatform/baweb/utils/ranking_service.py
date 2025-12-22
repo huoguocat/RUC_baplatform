@@ -294,7 +294,7 @@ class RankingService:
         Args:
             posts: 帖子列表
             user: 用户对象
-            sort_by: 排序方式 ('heat', 'newest', 'bounty')
+            sort_by: 排序方式 ('heat', 'newest', 'bounty', 'personalized')
             enable_personalization: 是否启用个性化
             respect_pinned: 是否尊重置顶状态（False时忽略isPinned字段）
             
@@ -314,6 +314,17 @@ class RankingService:
                 return sorted(posts, key=lambda p: (-p.isPinned, -p.bountyPoints, -p.createdAt.timestamp()))
             else:
                 return sorted(posts, key=lambda p: (-p.bountyPoints, -p.createdAt.timestamp()))
+        
+        elif sort_by == 'personalized':
+            # 纯个性化排序（必须有用户）
+            if user:
+                return RankingService.personalized_ranking(posts, user, respect_pinned=respect_pinned)
+            else:
+                # 无用户时降级为热度排序
+                if respect_pinned:
+                    return sorted(posts, key=lambda p: (-p.isPinned, -p.heatScore))
+                else:
+                    return sorted(posts, key=lambda p: -p.heatScore)
         
         else:  # 'heat' or default
             # 按热度排序（支持个性化）

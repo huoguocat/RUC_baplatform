@@ -233,29 +233,36 @@
         
         .sort-options {
             display: flex;
+            align-items: center;
             gap: 10px;
         }
         
-        .sort-btn {
-            padding: 10px 20px;
+        .sort-options label {
+            font-size: 14px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        .sort-select {
+            padding: 10px 15px;
             border: 2px solid #e2e8f0;
             background: white;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
             font-size: 14px;
             color: #4a5568;
+            min-width: 150px;
+            transition: all 0.2s;
         }
         
-        .sort-btn:hover {
+        .sort-select:hover {
             border-color: #3182ce;
-            color: #3182ce;
         }
         
-        .sort-btn.active {
-            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
-            color: white;
-            border-color: transparent;
+        .sort-select:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
         }
         
         /* 帖子列表 */
@@ -667,18 +674,23 @@
                     </div>
                     
                     <div class="sort-options">
-                        <button class="sort-btn {% if sort_by == 'heat' or not sort_by %}active{% endif %}" 
-                                onclick="sortBy('heat')">
-                            <i class="fa fa-fire"></i> 热度
-                        </button>
-                        <button class="sort-btn {% if sort_by == 'newest' %}active{% endif %}" 
-                                onclick="sortBy('newest')">
-                            <i class="fa fa-clock-o"></i> 最新
-                        </button>
-                        <button class="sort-btn {% if sort_by == 'bounty' %}active{% endif %}" 
-                                onclick="sortBy('bounty')">
-                            <i class="fa fa-gift"></i> 悬赏
-                        </button>
+                        <label for="sort-select"><i class="fa fa-sort"></i> 排序方式：</label>
+                        <select id="sort-select" class="sort-select" onchange="sortBy(this.value)">
+                            <option value="heat" {% if sort_by == 'heat' or not sort_by %}selected{% endif %}>
+                                🔥 热度排序
+                            </option>
+                            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>
+                                🕒 最新发布
+                            </option>
+                            <option value="bounty" {% if sort_by == 'bounty' %}selected{% endif %}>
+                                🎁 悬赏积分
+                            </option>
+                            {% if user_id %}
+                            <option value="personalized" {% if sort_by == 'personalized' %}selected{% endif %}>
+                                ✨ 智能推荐
+                            </option>
+                            {% endif %}
+                        </select>
                     </div>
                 </div>
                 
