@@ -510,3 +510,97 @@ class PostView(models.Model):
 
     def __str__(self):
         return f"{self.user.username} viewed {self.post.title}"
+
+
+class PersonalizedPostScore(models.Model):
+    '''用户个性化帖子分数缓存表
+    
+    用于缓存每个用户对每篇帖子的个性化推荐分数，
+    避免每次请求都重新计算，提高性能。
+    '''
+    user = models.ForeignKey(User, verbose_name='用户', on_delete=models.CASCADE, related_name='personalized_scores')
+    post = models.ForeignKey(Post, verbose_name='帖子', on_delete=models.CASCADE, related_name='user_scores')
+    
+    # 分数组成部分
+    personalizedScore = models.FloatField(verbose_name='个性化分数', default=0.0, 
+                                         help_text='基于用户画像的个性化相关度分数（0-1）')
+    heatScore = models.FloatField(verbose_name='热度分数', default=0.0,
+                                  help_text='帖子的基础热度分数')
+    finalScore = models.FloatField(verbose_name='最终综合分数', default=0.0, db_index=True,
+                                   help_text='个性化分数与热度分数的加权综合')
+    
+    # 元数据
+    calculatedAt = models.DateTimeField(verbose_name='计算时间', auto_now=True,
+                                       help_text='分数最后计算/更新的时间')
+    version = models.IntegerField(verbose_name='版本号', default=1,
+                                  help_text='用于追踪算法版本')
+    
+    class Meta:
+        unique_together = ('user', 'post')
+        verbose_name_plural = '个性化帖子分数缓存'
+        indexes = [
+            models.Index(fields=['user', '-finalScore']),  # 用户查询自己的推荐排序
+            models.Index(fields=['post']),
+            models.Index(fields=['-calculatedAt']),  # 用于清理过期缓存
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} -> {self.post.title}: {self.finalScore:.2f}"
+    
+    @classmethod
+    def get_or_calculate(cls, user, post, personalization_weight=0.3):
+        '''获取或计算个性化分数
+        
+        如果缓存中有且是最近1小时内计算的，直接返回；
+        否则重新计算并缓存。
+        
+        Args:
+            user: 用户对象
+            post: 帖子对象
+            personalization_weight: 个性化权重（0-1）
+        
+        Returns:
+            float: 最终综合分数
+        '''
+        from django.utils import timezone
+        from datetime import timedelta
+        from .utils.ranking_service import RankingService
+        
+        # 尝试从缓存获取
+        cache_lifetime = timedelta(hours=1)
+        cutoff_time = timezone.now() - cache_lifetime
+        
+        try:
+            cached = cls.objects.get(user=user, post=post)
+            # 如果缓存还在有效期内，直接返回
+            if cached.calculatedAt >= cutoff_time:
+                return cached.finalScore
+        except cls.DoesNotExist:
+            cached = None
+        
+        # 重新计算
+        user_profile = RankingService.get_user_profile(user)
+        personalized_score = RankingService.calculate_personalized_score(post, user_profile)
+        heat_score = post.heatScore
+        
+        final_score = (
+            heat_score * (1 - personalization_weight) +
+            personalized_score * 100 * personalization_weight
+        )
+        
+        # 更新或创建缓存
+        if cached:
+            cached.personalizedScore = personalized_score
+            cached.heatScore = heat_score
+            cached.finalScore = final_score
+            cached.save()
+        else:
+            cls.objects.create(
+                user=user,
+                post=post,
+                personalizedScore=personalized_score,
+                heatScore=heat_score,
+                finalScore=final_score
+            )
+        
+        return final_score
