@@ -446,6 +446,11 @@
                             <i class="fa fa-trash"></i> 删除
                         </button>
                         {% endif %}
+                        {% if is_admin %}
+                        <button class="btn-admin-delete-comment" data-comment-id="{{ comment.commentId }}" style="background-color: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; margin-left: 5px;">
+                            <i class="fa fa-times-circle"></i> 管理员删除
+                        </button>
+                        {% endif %}
                     </div>
                     
                     <!-- 回复列表 -->
@@ -485,6 +490,11 @@
                                 {% if user_id and reply.author.id == user_id %}
                                 <button class="btn-comment-delete" data-comment-id="{{ reply.commentId }}">
                                     <i class="fa fa-trash"></i> 删除
+                                </button>
+                                {% endif %}
+                                {% if is_admin %}
+                                <button class="btn-admin-delete-comment" data-comment-id="{{ reply.commentId }}" style="background-color: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; margin-left: 5px;">
+                                    <i class="fa fa-times-circle"></i> 管理员删除
                                 </button>
                                 {% endif %}
                             </div>
@@ -726,6 +736,36 @@
                         } else {
                             alert(res.msg);
                         }
+                    }
+                });
+            });
+            
+            // 管理员删除评论
+            $('.btn-admin-delete-comment').on('click', function() {
+                if (!confirm('确定要删除这条评论吗？此操作不可恢复！')) {
+                    return;
+                }
+                
+                var commentId = $(this).data('comment-id');
+                
+                $.ajax({
+                    url: '/admin/comments/delete/',
+                    type: 'POST',
+                    data: {
+                        comment_id: commentId,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.msg);
+                            location.reload();
+                        } else {
+                            alert(res.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('操作失败，请稍后重试');
                     }
                 });
             });

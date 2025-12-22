@@ -29,6 +29,10 @@ urlpatterns = [
     path('logout/', user.user_logout),
     ##管理员功能
     path('admin/', user.user_admin), 
+    path('admin/posts/', user.admin_posts),  # 管理员查看所有帖子
+    path('admin/posts/delete/', user.admin_delete_post),  # 管理员删除帖子
+    path('admin/posts/restore/', user.admin_restore_post),  # 管理员恢复帖子
+    path('admin/comments/delete/', user.admin_delete_comment),  # 管理员删除评论
     path('teacher/import', admin.teacher_import),
     path('teacher/add', admin.teacher_add),
     path('teacher/<int:id>/is_disabled', admin.is_disabled),

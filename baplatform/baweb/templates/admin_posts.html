@@ -1,0 +1,247 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子管理 - 管理员</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.4.1/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+        .post-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #5cb85c;
+        }
+        .post-item.deleted {
+            background-color: #f9f2f4;
+            border-left: 3px solid #d9534f;
+        }
+        .post-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .post-meta {
+            color: #999;
+            font-size: 13px;
+        }
+        .post-meta span {
+            margin-right: 15px;
+        }
+        .post-actions {
+            margin-top: 10px;
+        }
+        .filter-bar {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="logo" href="/admin/">
+                    <img src="{% static 'img/layout_logo.png' %}">
+                </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="/admin/"><i class="fa fa-arrow-left"></i> 返回管理面板</a></li>
+                    <li><a href="/forum/"><i class="fa fa-comments"></i> 论坛首页</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            {{ username }} <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/logout/">登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <i class="fa fa-comments"></i> 帖子管理
+                </h3>
+            </div>
+            <div class="panel-body">
+                <!-- 筛选栏 -->
+                <div class="filter-bar">
+                    <form method="get" class="form-inline">
+                        <div class="form-group">
+                            <label>状态：</label>
+                            <select name="status" class="form-control" onchange="this.form.submit()">
+                                <option value="all" {% if status == 'all' %}selected{% endif %}>全部</option>
+                                <option value="active" {% if status == 'active' %}selected{% endif %}>正常</option>
+                                <option value="deleted" {% if status == 'deleted' %}selected{% endif %}>已删除</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-left: 15px;">
+                            <label>搜索：</label>
+                            <input type="text" name="keyword" class="form-control" placeholder="帖子标题或内容" value="{{ keyword }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-search"></i> 搜索
+                        </button>
+                    </form>
+                    <div style="margin-top: 10px;">
+                        <span class="label label-default">总帖子数: {{ total_posts }}</span>
+                        <span class="label label-success">正常: {{ active_posts }}</span>
+                        <span class="label label-danger">已删除: {{ deleted_posts }}</span>
+                    </div>
+                </div>
+
+                <!-- 帖子列表 -->
+                {% if posts %}
+                <div id="posts-list">
+                    {% for post in posts %}
+                    <div class="post-item {% if post.isDeletedByTeacher %}deleted{% endif %}" data-post-id="{{ post.postId }}">
+                        <div class="post-title">
+                            <a href="/forum/post/{{ post.postId }}/" target="_blank">
+                                {{ post.title }}
+                            </a>
+                            {% if post.isPinned %}
+                            <span class="label label-warning"><i class="fa fa-thumb-tack"></i> 置顶</span>
+                            {% endif %}
+                            {% if post.isDeletedByTeacher %}
+                            <span class="label label-danger"><i class="fa fa-trash"></i> 已删除</span>
+                            {% endif %}
+                        </div>
+                        <div class="post-meta">
+                            <span><i class="fa fa-user"></i> 
+                                {% if post.isAnonymous %}匿名{% else %}{{ post.author.username }}{% endif %}
+                            </span>
+                            <span><i class="fa fa-clock-o"></i> {{ post.createdAt|date:"Y-m-d H:i" }}</span>
+                            <span><i class="fa fa-eye"></i> {{ post.viewCount }}</span>
+                            <span><i class="fa fa-comment"></i> {{ post.commentCount }}</span>
+                            <span><i class="fa fa-thumbs-up"></i> {{ post.likeCount }}</span>
+                            {% if post.course %}
+                            <span><i class="fa fa-book"></i> {{ post.course.name }}</span>
+                            {% endif %}
+                            {% if post.category %}
+                            <span><i class="fa fa-tag"></i> {{ post.category.get_name_display }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="post-actions">
+                            {% if post.isDeletedByTeacher %}
+                            <button class="btn btn-success btn-sm restore-post" data-post-id="{{ post.postId }}">
+                                <i class="fa fa-undo"></i> 恢复
+                            </button>
+                            {% else %}
+                            <button class="btn btn-danger btn-sm delete-post" data-post-id="{{ post.postId }}">
+                                <i class="fa fa-trash"></i> 删除
+                            </button>
+                            {% endif %}
+                            <a href="/forum/post/{{ post.postId }}/" class="btn btn-info btn-sm" target="_blank">
+                                <i class="fa fa-eye"></i> 查看详情
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 分页 -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <ul class="pagination">
+                        {% if posts.has_previous %}
+                        <li><a href="?page=1&status={{ status }}&keyword={{ keyword }}">首页</a></li>
+                        <li><a href="?page={{ posts.previous_page_number }}&status={{ status }}&keyword={{ keyword }}">上一页</a></li>
+                        {% endif %}
+                        
+                        <li class="active"><a>第 {{ posts.number }} / {{ posts.paginator.num_pages }} 页</a></li>
+                        
+                        {% if posts.has_next %}
+                        <li><a href="?page={{ posts.next_page_number }}&status={{ status }}&keyword={{ keyword }}">下一页</a></li>
+                        <li><a href="?page={{ posts.paginator.num_pages }}&status={{ status }}&keyword={{ keyword }}">末页</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> 暂无帖子
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'plugins/jquery-3.6.0/jquery-3.6.0.min.js' %}"></script>
+    <script src="{% static 'plugins/bootstrap-3.4.1/js/bootstrap.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            // 删除帖子
+            $('.delete-post').click(function() {
+                var postId = $(this).data('post-id');
+                if (confirm('确定要删除这个帖子吗？')) {
+                    $.ajax({
+                        url: '/admin/posts/delete/',
+                        type: 'POST',
+                        data: {
+                            post_id: postId,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                alert('删除成功');
+                                location.reload();
+                            } else {
+                                alert('删除失败: ' + response.msg);
+                            }
+                        },
+                        error: function() {
+                            alert('操作失败，请重试');
+                        }
+                    });
+                }
+            });
+
+            // 恢复帖子
+            $('.restore-post').click(function() {
+                var postId = $(this).data('post-id');
+                if (confirm('确定要恢复这个帖子吗？')) {
+                    $.ajax({
+                        url: '/admin/posts/restore/',
+                        type: 'POST',
+                        data: {
+                            post_id: postId,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                alert('恢复成功');
+                                location.reload();
+                            } else {
+                                alert('恢复失败: ' + response.msg);
+                            }
+                        },
+                        error: function() {
+                            alert('操作失败，请重试');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

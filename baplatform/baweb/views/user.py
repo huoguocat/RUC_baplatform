@@ -319,3 +319,152 @@ def user_help(request):
         "changepwd_form":changepwd_form
     }
     return render(request, "help.html", content)
+
+
+# ==================== 管理员帖子管理 ====================
+
+def admin_posts(request):
+    """管理员查看所有帖子"""
+    info = request.session.get("info", "")
+    if not info:
+        return redirect("/login/")
+    
+    user = models.User.objects.filter(id=info['id']).first()
+    if not user or user.type != 3:
+        return redirect("/")
+    
+    from django.db.models import Q, Count
+    from django.core.paginator import Paginator
+    
+    # 获取筛选参数
+    status = request.GET.get('status', 'all')
+    keyword = request.GET.get('keyword', '')
+    
+    # 构建查询
+    posts_query = models.Post.objects.all().select_related('author', 'category', 'course')
+    
+    # 按状态筛选
+    if status == 'active':
+        posts_query = posts_query.filter(isDeletedByTeacher=False)
+    elif status == 'deleted':
+        posts_query = posts_query.filter(isDeletedByTeacher=True)
+    
+    # 关键词搜索
+    if keyword:
+        posts_query = posts_query.filter(
+            Q(title__icontains=keyword) | Q(content__icontains=keyword)
+        )
+    
+    # 排序：最新的在前
+    posts_query = posts_query.order_by('-createdAt')
+    
+    # 统计数据
+    total_posts = models.Post.objects.count()
+    active_posts = models.Post.objects.filter(isDeletedByTeacher=False).count()
+    deleted_posts = models.Post.objects.filter(isDeletedByTeacher=True).count()
+    
+    # 分页
+    paginator = Paginator(posts_query, 20)
+    page_num = request.GET.get('page', 1)
+    posts_page = paginator.get_page(page_num)
+    
+    context = {
+        'username': info['name'],
+        'posts': posts_page,
+        'status': status,
+        'keyword': keyword,
+        'total_posts': total_posts,
+        'active_posts': active_posts,
+        'deleted_posts': deleted_posts,
+    }
+    
+    return render(request, "admin_posts.html", context)
+
+
+@csrf_exempt
+def admin_delete_post(request):
+    """管理员删除帖子"""
+    if request.method != 'POST':
+        return JsonResponse({"status": False, "msg": "请求方式错误"})
+    
+    info = request.session.get("info", "")
+    if not info:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    user = models.User.objects.filter(id=info['id']).first()
+    if not user or user.type != 3:
+        return JsonResponse({"status": False, "msg": "无权限"})
+    
+    post_id = request.POST.get('post_id')
+    if not post_id:
+        return JsonResponse({"status": False, "msg": "缺少参数"})
+    
+    post = models.Post.objects.filter(postId=post_id).first()
+    if not post:
+        return JsonResponse({"status": False, "msg": "帖子不存在"})
+    
+    # 标记为已删除
+    post.isDeletedByTeacher = True
+    post.save()
+    
+    return JsonResponse({"status": True, "msg": "删除成功"})
+
+
+@csrf_exempt
+def admin_restore_post(request):
+    """管理员恢复帖子"""
+    if request.method != 'POST':
+        return JsonResponse({"status": False, "msg": "请求方式错误"})
+    
+    info = request.session.get("info", "")
+    if not info:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    user = models.User.objects.filter(id=info['id']).first()
+    if not user or user.type != 3:
+        return JsonResponse({"status": False, "msg": "无权限"})
+    
+    post_id = request.POST.get('post_id')
+    if not post_id:
+        return JsonResponse({"status": False, "msg": "缺少参数"})
+    
+    post = models.Post.objects.filter(postId=post_id).first()
+    if not post:
+        return JsonResponse({"status": False, "msg": "帖子不存在"})
+    
+    # 恢复帖子
+    post.isDeletedByTeacher = False
+    post.save()
+    
+    return JsonResponse({"status": True, "msg": "恢复成功"})
+
+
+@csrf_exempt
+def admin_delete_comment(request):
+    """管理员删除评论（硬删除）"""
+    if request.method != 'POST':
+        return JsonResponse({"status": False, "msg": "请求方式错误"})
+    
+    info = request.session.get("info", "")
+    if not info:
+        return JsonResponse({"status": False, "msg": "未登录"})
+    
+    user = models.User.objects.filter(id=info['id']).first()
+    if not user or user.type != 3:
+        return JsonResponse({"status": False, "msg": "无权限"})
+    
+    comment_id = request.POST.get('comment_id')
+    if not comment_id:
+        return JsonResponse({"status": False, "msg": "缺少参数"})
+    
+    comment = models.PostComment.objects.filter(commentId=comment_id).first()
+    if not comment:
+        return JsonResponse({"status": False, "msg": "评论不存在"})
+    
+    # 删除该评论的所有子评论（回复）
+    models.PostComment.objects.filter(parentComment=comment).delete()
+    
+    # 删除评论
+    comment.delete()
+    
+    return JsonResponse({"status": True, "msg": "删除成功"})

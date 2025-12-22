@@ -346,6 +346,11 @@ def post_detail(request, post_id):
         except models.TeacherInfo.DoesNotExist:
             pass
     
+    # 检查当前用户是否是管理员
+    is_admin = False
+    if current_user and current_user.type == 3:
+        is_admin = True
+    
     # 使用Activity 4服务生成推荐内容
     recommended_posts = []
     trending_tags = []
@@ -370,11 +375,13 @@ def post_detail(request, post_id):
         'tags_list': tags_list,
         'can_select_best_answer': can_select_best_answer,
         'is_teacher': is_teacher,
+        'is_admin': is_admin,
         'recommended_posts': recommended_posts,
         'trending_tags': trending_tags,
     }
     
     return render(request, 'forum/post_detail.html', context)
+
 
 
 @csrf_exempt
